@@ -1,5 +1,6 @@
 library(XML)
 library(plyr)
+library(dplyr)
 
 extractTable<-function(html){
   readHTMLTable(html, stringsAsFactors=F)[[1]] %>%
@@ -37,7 +38,9 @@ software_xpaths<-list(
        attr='href'),
   Related=list(
        xpath="id('main')/div[@class='main-item box']/ul/li/a",
-       attr='title')
+       attr='title'),
+  Catalog=list(
+       xpath="id('main')/div[@class='breadcrumb']/a[position()>1]")
   )
 
 test_file<-'omictools.com/-13-c-based-metabolic-flux-analysis-s7233.html'
