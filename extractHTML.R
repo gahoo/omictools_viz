@@ -8,7 +8,7 @@ extractTable<-function(html){
     dlply(.variables='V1', .fun=function(x){x$V2})
 }
 
-extractHtmlInfo<-function(html_file, xpaths, ...){
+extractHtmlInfo<-function(html, xpaths, ...){
   extractXpath<-function(doc, xpath){
     if(is.null(xpath$attr)){
       xpathSApply(doc, xpath$xpath, xmlValue)
@@ -17,18 +17,26 @@ extractHtmlInfo<-function(html_file, xpaths, ...){
     }
   }
   
-  html<-readLines(html_file)
   doc<-htmlParse(html, asText=TRUE, ...)
-  
-  info<-lapply(xpaths, extractXpath, doc=doc)
-  c(info, extractTable(html))
+  lapply(xpaths, extractXpath, doc=doc)
 }
+
+extractSoftHtmlInfo<-function(html_file, xpaths, ...){
+  html<-readLines(html_file)
+  c(extractHtmlInfo(html, xpaths, ...), extractTable(html))
+}
+
+extractCatalogHtmlInfo<-function(html_file, xpaths, ...){
+  html<-readLines(html_file)
+  extractHtmlInfo(html, xpaths, ...)
+}
+
 
 html_files<-dir('omictools.com/', pattern="*.html")
 
 s_idx<-grep("s[0-9]+\\.html",html_files)
 c_idx<-grep("c[0-9]+-",html_files)
-html_files[setdiff(1:10720,c(s_idx,c_idx))]
+html_files[setdiff(1:length(html_files), c(s_idx,c_idx))]
 
 software_xpaths<-list(
   Description=list(
@@ -43,11 +51,43 @@ software_xpaths<-list(
        xpath="id('main')/div[@class='breadcrumb']/a[position()>1]")
   )
 
+catalog_xpaths<-list(
+  name=list(
+       xpath="id('categories-nav')/ul/li/a",
+       attr='title'),
+  href=list(
+       xpath="id('categories-nav')/ul/li/a",
+       attr='href'),
+  img=list(
+       xpath="id('categories-nav')/ul/li/a/img",
+       attr='src'),
+  number=list(
+      xpath="id('categories-nav')/ul/li/a/span"
+      )
+  )
+
+checklink_xpaths<-list(
+  href=list(
+    xpath='//a',
+    attr='href'),
+  map=list(
+    xpath='//area',
+    attr='href')
+  )
+
 test_file<-'omictools.com/-13-c-based-metabolic-flux-analysis-s7233.html'
-test<-extractHtmlInfo(test_file, software_xpaths)
+test<-extractSoftHtmlInfo(test_file, software_xpaths)
 
-kk<-html_files[s_idx[1:500]] %>%
+broken<-html_files[c_idx] %>%
   sprintf(fmt="omictools.com/%s") %>%
-  lapply(extractHtmlInfo, xpaths=software_xpaths)
+  lapply(extractCatalogHtmlInfo, xpaths=checklink_xpaths) %>%
+  unlist
 
-names(kk)<-html_files[s_idx[1:5]]
+undownload_links_idx<-grep('omictools.com', broken)
+unique(broken[undownload_links_idx])
+
+software<-html_files[s_idx[1:5]] %>%
+  sprintf(fmt="omictools.com/%s") %>%
+  lapply(extractSoftHtmlInfo, xpaths=software_xpaths)
+
+names(software)<-html_files[s_idx[1:5]]
