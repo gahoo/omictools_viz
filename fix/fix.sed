@@ -1,0 +1,9 @@
+s#http://omictools.com/coremine-medical-s124.html#coremine-medical-s124.html#g
+s#http://omictools.com/coregenomics-s570.html#coregenomics-s570.html#g
+s#http://omictools.com/core-ilp-s9844.html#core-ilp-s9844.html#g
+s#http://omictools.com/core-pa-s9839.html#core-pa-s9839.html#g
+s#http://omictools.com/coreldraw-s6293.html#coreldraw-s6293.html#g
+s#http://omictools.com/coregnet-s9504.html#coregnet-s9504.html#g
+s#http://omictools.com/viewmol-s5784.html#viewmol-s5784.html#g
+s#http://omictools.com/core-tf-s10321.html#core-tf-s10321.html#g
+s#http://omictools.com/coreboost-s10650.html#coreboost-s10650.html#g
