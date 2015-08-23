@@ -51,19 +51,30 @@ software_xpaths<-list(
        xpath="id('main')/div[@class='breadcrumb']/a[position()>1]")
   )
 
-catalog_xpaths<-list(
+catalog_folder_xpaths<-list(
   name=list(
-       xpath="id('categories-nav')/ul/li/a",
+       xpath="//nav[@class='categories-nav']/ul/li/a",
        attr='title'),
   href=list(
-       xpath="id('categories-nav')/ul/li/a",
+       xpath="//nav[@class='categories-nav']/ul/li/a",
        attr='href'),
   img=list(
-       xpath="id('categories-nav')/ul/li/a/img",
+       xpath="//nav[@class='categories-nav']/ul/li/a/img",
        attr='src'),
   number=list(
-      xpath="id('categories-nav')/ul/li/a/span"
+      xpath="//nav[@class='categories-nav']/ul/li/span"
       )
+  )
+
+catalog_software_xpaths<-list(
+  name=list(
+    xpath="//div[@class='category-site-details']//span"),
+  href=list(
+    xpath="//div[@class='category-site-details']//a",
+    attr='href'),
+  type=list(
+    xpath="//div[@class='category-site-details']//abbr",
+    attr='title')
   )
 
 checklink_xpaths<-list(
@@ -91,3 +102,12 @@ software<-html_files[s_idx[1:5]] %>%
   lapply(extractSoftHtmlInfo, xpaths=software_xpaths)
 
 names(software)<-html_files[s_idx[1:5]]
+
+catalog<-html_files[c_idx[1:5]] %>%
+  'bs-seq-c1217-p1.html' %>%
+  'quantification-c351-p1.html' %>%
+  sprintf(fmt="omictools.com/%s") %>%
+  lapply(extractCatalogHtmlInfo, xpaths=catalog_software_xpaths)
+  lapply(extractCatalogHtmlInfo, xpaths=catalog_folder_xpaths)
+
+names(catalog_xpaths)<-html_files[c_idx[1:5]]
