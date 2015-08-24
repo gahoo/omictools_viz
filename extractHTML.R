@@ -26,16 +26,22 @@ extractSoftHtmlInfo<-function(html_file, xpaths, ...){
   c(extractHtmlInfo(html, xpaths, ...), extractTable(html))
 }
 
-extractCatalogHtmlInfo<-function(html_file, xpaths, ...){
+extractCatalogHtmlInfo<-function(html_file, ...){
   html<-readLines(html_file)
+  if(length(grep("categories-nav", html))!=0){
+    xpaths=catalog_folder_xpaths
+  }else{
+    xpaths=catalog_software_xpaths
+  }
+  
   extractHtmlInfo(html, xpaths, ...)
 }
 
 
 html_files<-dir('omictools.com/', pattern="*.html")
 
-s_idx<-grep("s[0-9]+\\.html",html_files)
-c_idx<-grep("c[0-9]+-",html_files)
+s_idx<-grep("-s[0-9]+\\.html",html_files)
+c_idx<-grep("-c[0-9]+-",html_files)
 html_files[setdiff(1:length(html_files), c(s_idx,c_idx))]
 
 software_xpaths<-list(
@@ -52,6 +58,8 @@ software_xpaths<-list(
   )
 
 catalog_folder_xpaths<-list(
+  parent=list(
+       xpath="id('main')/div[@class='header1 navbar']/h1"),
   name=list(
        xpath="//nav[@class='categories-nav']/ul/li/a",
        attr='title'),
@@ -68,12 +76,12 @@ catalog_folder_xpaths<-list(
 
 catalog_software_xpaths<-list(
   name=list(
-    xpath="//div[@class='category-site-details']//span"),
+    xpath="//div[@class='category-site-details']//a"),
   href=list(
     xpath="//div[@class='category-site-details']//a",
     attr='href'),
   type=list(
-    xpath="//div[@class='category-site-details']//abbr",
+    xpath="//div[@class='category-site-details']/header[not(abbr)]/h3/a|//div[@class='category-site-details']/header/abbr",
     attr='title')
   )
 
@@ -103,11 +111,24 @@ software<-html_files[s_idx[1:5]] %>%
 
 names(software)<-html_files[s_idx[1:5]]
 
-catalog<-html_files[c_idx[1:5]] %>%
-  'bs-seq-c1217-p1.html' %>%
-  'quantification-c351-p1.html' %>%
+catalog<-html_files[c_idx] %>%
   sprintf(fmt="omictools.com/%s") %>%
-  lapply(extractCatalogHtmlInfo, xpaths=catalog_software_xpaths)
-  lapply(extractCatalogHtmlInfo, xpaths=catalog_folder_xpaths)
+  lapply(extractCatalogHtmlInfo)
 
-names(catalog_xpaths)<-html_files[c_idx[1:5]]
+names(catalog)<-html_files[c_idx]
+
+catalog_df<-catalog %>%
+  lapply(as.data.frame) %>%
+  ldply(.id='parent_href')
+
+catalog_df %>%
+  filter(!is.na(number))
+
+kk<-do.call('rbind.fill', sapply(1:792, function(idx){as.data.frame(lapply(catalog[[idx]], length))}))
+idxs<-sapply(1:792, function(idx){
+  a<-mean(unlist(kk[idx,]), na.rm=T)
+  round(a)!=a
+  })
+nrow(kk[idxs,])
+
+html_files[c_idx[225]]
