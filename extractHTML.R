@@ -58,8 +58,10 @@ software_xpaths<-list(
   )
 
 catalog_folder_xpaths<-list(
+  parent_alias=list(
+    xpath="id('main')/div[@class='header1 navbar']/h1"),
   parent=list(
-       xpath="id('main')/div[@class='header1 navbar']/h1"),
+       xpath="id('main')/div[@class='breadcrumb']/a[last()]"),
   name=list(
        xpath="//nav[@class='categories-nav']/ul/li/a",
        attr='title'),
@@ -75,6 +77,8 @@ catalog_folder_xpaths<-list(
   )
 
 catalog_software_xpaths<-list(
+  #parent_desc=list(
+  #  xpath="//div[@class='main-item box'][1]"),
   name=list(
     xpath="//div[@class='category-site-details']//a"),
   href=list(
@@ -111,24 +115,16 @@ software<-html_files[s_idx[1:5]] %>%
 
 names(software)<-html_files[s_idx[1:5]]
 
-catalog<-html_files[c_idx] %>%
+catalog<-html_files[c_idx[1:30]] %>%
   sprintf(fmt="omictools.com/%s") %>%
   lapply(extractCatalogHtmlInfo)
 
-names(catalog)<-html_files[c_idx]
+names(catalog)<-html_files[c_idx[1:30]]
 
 catalog_df<-catalog %>%
   lapply(as.data.frame) %>%
   ldply(.id='parent_href')
 
-catalog_df %>%
-  filter(!is.na(number))
-
-kk<-do.call('rbind.fill', sapply(1:792, function(idx){as.data.frame(lapply(catalog[[idx]], length))}))
-idxs<-sapply(1:792, function(idx){
-  a<-mean(unlist(kk[idx,]), na.rm=T)
-  round(a)!=a
-  })
-nrow(kk[idxs,])
-
-html_files[c_idx[225]]
+catalog_df_c<-catalog_df %>%
+  filter(!is.na(number)) %>%
+  filter(parent_href %in% html_files[c_idx[1:30]])
