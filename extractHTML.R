@@ -11,9 +11,15 @@ extractTable<-function(html){
 extractHtmlInfo<-function(html, xpaths, ...){
   extractXpath<-function(doc, xpath){
     if(is.null(xpath$attr)){
-      xpathSApply(doc, xpath$xpath, xmlValue)
+      values<-xpathSApply(doc, xpath$xpath, xmlValue)
     }else{
-      xpathSApply(doc, xpath$xpath, xmlGetAttr, name=xpath$attr)
+      values<-xpathSApply(doc, xpath$xpath, xmlGetAttr, name=xpath$attr)
+    }
+    
+    if(length(values)==0){
+      NA
+    }else{
+      values
     }
   }
   
@@ -22,39 +28,37 @@ extractHtmlInfo<-function(html, xpaths, ...){
 }
 
 extractSoftHtmlInfo<-function(html_file, xpaths, ...){
-  html<-readLines(html_file)
+  html<-readLines(html_file, warn = F)
   c(extractHtmlInfo(html, xpaths, ...), extractTable(html))
 }
 
-extractCatalogHtmlInfo<-function(html_file, ...){
-  html<-readLines(html_file)
-  if(length(grep("categories-nav", html))!=0){
-    xpaths=catalog_folder_xpaths
-  }else{
-    xpaths=catalog_software_xpaths
+extractCatalogHtmlInfo<-function(html_file, xpaths=NULL, ...){
+  html<-readLines(html_file, warn = F)
+  if(is.null(xpaths)){
+    if(length(grep("categories-nav", html))!=0){
+      xpaths=catalog_folder_xpaths
+    }else{
+      xpaths=catalog_software_xpaths
+    }
   }
   
   extractHtmlInfo(html, xpaths, ...)
 }
 
-
-html_files<-dir('omictools.com/', pattern="*.html")
-
-s_idx<-grep("-s[0-9]+\\.html",html_files)
-c_idx<-grep("-c[0-9]+-",html_files)
-html_files[setdiff(1:length(html_files), c(s_idx,c_idx))]
-
 software_xpaths<-list(
-  Description=list(
-       xpath="id('main')/article/div/div/div[1]"),
-  Link=list(
-       xpath="id('main')/article/div/div/div/a",
-       attr='href'),
-  Related=list(
-       xpath="id('main')/div[@class='main-item box']/ul/li/a",
-       attr='title'),
-  Catalog=list(
-       xpath="id('main')/div[@class='breadcrumb']/a[position()>1]")
+  description=list(
+    xpath="id('main')/article/div/div/div[1]"),
+  link=list(
+    xpath="id('main')/article/div/div/div/a",
+    attr='href'),
+  related=list(
+    xpath="id('main')/div[@class='main-item box']/ul/li/a",
+    attr='title'),
+  catalog=list(
+    xpath="id('main')/div[@class='breadcrumb']/a[position()>1]"),
+  img=list(
+    xpath="//div[@class='site-preview']/a/img",
+    attr='src')
   )
 
 catalog_folder_xpaths<-list(
@@ -71,14 +75,18 @@ catalog_folder_xpaths<-list(
   img=list(
        xpath="//nav[@class='categories-nav']/ul/li/a/img",
        attr='src'),
-  number=list(
+  count=list(
       xpath="//nav[@class='categories-nav']/ul/li/span"
       )
   )
 
 catalog_software_xpaths<-list(
-  #parent_desc=list(
-  #  xpath="//div[@class='main-item box'][1]"),
+  parent_desc=list(
+    xpath="//div[@class='main-item box'][not(ul)]"),
+  parent_alias=list(
+    xpath="id('main')/div[@class='header1 navbar']/h1"),
+  parent=list(
+    xpath="id('main')/div[@class='breadcrumb']/a[last()]"),
   name=list(
     xpath="//div[@class='category-site-details']//a"),
   href=list(
@@ -86,7 +94,10 @@ catalog_software_xpaths<-list(
     attr='href'),
   type=list(
     xpath="//div[@class='category-site-details']/header[not(abbr)]/h3/a|//div[@class='category-site-details']/header/abbr",
-    attr='title')
+    attr='title'),
+  img=list(
+    xpath="//aside[@class='category-site-thumbnail']/a/img",
+    attr='src')
   )
 
 checklink_xpaths<-list(
@@ -98,33 +109,67 @@ checklink_xpaths<-list(
     attr='href')
   )
 
-test_file<-'omictools.com/-13-c-based-metabolic-flux-analysis-s7233.html'
-test<-extractSoftHtmlInfo(test_file, software_xpaths)
 
-broken<-html_files[c_idx] %>%
-  sprintf(fmt="omictools.com/%s") %>%
-  lapply(extractCatalogHtmlInfo, xpaths=checklink_xpaths) %>%
+html_files<-dir('omictools.com/', pattern="*.html")
+s_idx<-grep("-s[0-9]+\\.html",html_files)
+c_idx<-grep("-c[0-9]+-",html_files)
+software_html_files<-html_files[s_idx]
+catalog_html_files<-html_files[c_idx]
+other_files<-setdiff(html_files, c(software_html_files, catalog_html_files))
+print(other_files)
+
+#test_file<-'omictools.com/-13-c-based-metabolic-flux-analysis-s7233.html'
+#test<-extractSoftHtmlInfo(test_file, software_xpaths)
+
+extractInfo<-function(htmlfiles, fun, xpaths=NULL){
+  info<-htmlfiles %>%
+    sprintf(fmt="omictools.com/%s") %>%
+    llply(fun, xpaths=xpaths,
+          .progress=progress_text(char='.'))
+  
+  names(info)<-htmlfiles
+  info
+}
+
+checkCatalogUnDownloadLink<-function(htmlfiles, checklink_xpaths){  
+  un_down<-extractInfo(htmlfiles, extractCatalogHtmlInfo, checklink_xpaths) %>%
+    unlist
+  
+  idx<-grep('omictools.com', un_down)
+  unique(un_down[idx])
+}
+
+un_down<-checkCatalogUnDownloadLink(catalog_html_files[1:10], checklink_xpaths)
+print(un_down)
+
+software<-extractInfo(software_html_files[1:10], extractSoftHtmlInfo, software_xpaths)
+catalog<-extractInfo(catalog_html_files[1:10], extractCatalogHtmlInfo)
+
+software_df<-software %>%
+  lapply(function(x){lapply(x, paste0, collapse = ';')}) %>%
+  lapply(as.data.frame) %>%
+  ldply(.id='omictools_link')
+
+folder_idx<-catalog %>%
+  lapply(function(x){is.null(x$count)}) %>%
   unlist
 
-undownload_links_idx<-grep('omictools.com', broken)
-unique(broken[undownload_links_idx])
-
-software<-html_files[s_idx[1:5]] %>%
-  sprintf(fmt="omictools.com/%s") %>%
-  lapply(extractSoftHtmlInfo, xpaths=software_xpaths)
-
-names(software)<-html_files[s_idx[1:5]]
-
-catalog<-html_files[c_idx[1:30]] %>%
-  sprintf(fmt="omictools.com/%s") %>%
-  lapply(extractCatalogHtmlInfo)
-
-names(catalog)<-html_files[c_idx[1:30]]
+catalog_folder<-catalog[folder_idx]
+catalog_software<-catalog[!folder_idx]
 
 catalog_df<-catalog %>%
   lapply(as.data.frame) %>%
   ldply(.id='parent_href')
 
-catalog_df_c<-catalog_df %>%
-  filter(!is.na(number)) %>%
-  filter(parent_href %in% html_files[c_idx[1:30]])
+catalog_folder_df<-catalog_df %>%
+  filter(!is.na(count)) %>%
+  filter(parent_href %in% catalog_html_files) %>%
+  select(-parent_desc, -type) %>%
+  mutate(count = as.numeric(gsub('[()]', '', as.character(count))) )
+
+catalog_software_df<-catalog_df %>%
+  filter(is.na(count)) %>%
+  filter(parent_href %in% catalog_html_files) %>%
+  select(-count)
+
+save(software, software_df, catalog, catalog_software, catalog_folder, catalog_software_df, catalog_folder_df, file='omictools.RData')
