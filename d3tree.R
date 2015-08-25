@@ -83,3 +83,36 @@ d3tree2(
   test
   , celltext = "name"
 )
+
+cc_df<-catalog_folder_df[c('parent', 'name')]
+ss_df<-catalog_software_df[c('parent', 'name')]
+roots<-with(cc_df, setdiff(parent, name))
+tt<-data.frame(parent=1:5, name=roots)
+cc_df<-rbind(tt,cc_df)
+
+buildNest<-function(df){
+  if(nrow(df)==0){
+    soft_df<-subset
+    return(soft_df)
+  }
+  node<-list()
+  roots<-with(df, setdiff(parent, name))
+  for(root in roots){
+    children<-subset(df, parent==root)$name
+    node[['name']]<-children
+    node[['children']]<-lapply(children, function(child){
+      sub_df<-subset(cc_df, parent==child)
+      buildNest(sub_df)
+    })
+  }
+  node
+}
+kk<-buildNest(cc_df)
+library(listviewer)
+jsonedit(kk)
+
+
+d3tree2(
+  toJSON(kk)
+  , celltext = "name"
+)
