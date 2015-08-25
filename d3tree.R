@@ -85,15 +85,17 @@ d3tree2(
 )
 
 cc_df<-catalog_folder_df[c('parent', 'name')]
-ss_df<-catalog_software_df[c('parent', 'name')]
+ss_tb<-table(catalog_software_df[['parent']])
 roots<-with(cc_df, setdiff(parent, name))
-tt<-data.frame(parent=1:5, name=roots)
+tt<-data.frame(parent='omictools', name=roots)
 cc_df<-rbind(tt,cc_df)
+cc_df<-cc_df %>% 
+  mutate(parent=as.character(parent),
+         name=as.character(name))
 
 buildNest<-function(df){
   if(nrow(df)==0){
-    soft_df<-subset
-    return(soft_df)
+    return(NA)
   }
   node<-list()
   roots<-with(df, setdiff(parent, name))
@@ -102,7 +104,15 @@ buildNest<-function(df){
     node[['name']]<-children
     node[['children']]<-lapply(children, function(child){
       sub_df<-subset(cc_df, parent==child)
-      buildNest(sub_df)
+      child_node<-buildNest(sub_df)
+      if(length(child_node)==0 || is.na(child_node)){
+        message(child)
+        #should not use name and parent, use href and parent_href instead!!!
+        v<-unlist(ifelse(is.na(ss_tb[child]), 0, ss_tb[[child]]))
+        list(name=child, size=v)
+      }else{
+        child_node
+      }
     })
   }
   node
