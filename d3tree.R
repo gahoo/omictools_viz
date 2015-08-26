@@ -4,18 +4,6 @@ library(d3treeR)
 library(data.tree)
 library(d3Network)
 
-# example 1 from ?treemap
-data(GNI2010)
-d3tree2(
-  treemap(
-    GNI2010
-    ,index=c("continent", "iso3")
-    ,vSize="population"
-    ,vColor="GNI"
-    ,type="value"
-  )
-  , rootname = "World"
-)
 
 d3tree2(
   treemap(
@@ -37,75 +25,59 @@ flare<-fromJSON("http://bl.ocks.org/mbostock/raw/4063582/raw/flare.json")
 jsonedit(flare)
 
 
-ccc<-as.character(software_df$catalog)
-sss<-strsplit(ccc,split=';')
-ss<-sapply(strsplit(ccc,split=';'), function(x){
-  idx<-length(x)-1
-  paste0(x[1:idx], collapse = ';')
-  })
+catalog_tree_df<-catalog_folder_df %>%
+  select(parent.id = parent_href,
+         parent.name = parent,
+         id = href,
+         name = name,
+         size = count) %>%
+  mutate(parent.id = gsub('^.*-', '', gsub('-p1.html', '', parent.id)),
+         id = gsub('^.*-', '', gsub('-p1.html', '', id)) ) %>%
+  unique
 
-ss<-table(ss)
+tree_df<-catalog_tree_df
 
-lapply(names(head(ss)), function(name){
-  ss[name]
-})
-
-
-test<-list(name='a',
-           children=list(
-             list(name='b',
-                  children=list(
-                    list(name='c',
-                         children=list(
-                           list(name='d')))))))
-
-tree<-list(name='omictools', children=list())
-for(cc in sss[1:200]){
-  tree[['children']]<-c(tree[['children']], list(nest(cc)) )
-}
-
-jsonedit(tree)
-
-nest<-function(vector){
-  n<-length(vector)
-  if(n>1){
-    list(name=vector[1],
-         children=list( nest(vector[2:n])) )
-  }else{
-    list(name=vector)
-  }  
-}
-
-test<-nest(sss[[1]])
-test[[2]][[1]][[2]][[1]]$name<-c(test[[2]][[1]][[2]][[1]]$name,'test')
-jsonedit(test)
-
-d3tree2(
-  test
-  , celltext = "name"
-)
-
-cc_df<-catalog_folder_df[c('parent', 'name')]
 ss_tb<-table(catalog_software_df[['parent']])
-roots<-with(cc_df, setdiff(parent, name))
-tt<-data.frame(parent='omictools', name=roots)
-cc_df<-rbind(tt,cc_df)
-cc_df<-cc_df %>% 
+#roots<-with(tree_df, setdiff(parent.name, name))
+roots.id<-with(tree_df, setdiff(parent.id, id))
+roots_size<-tree_df %>%
+  filter(parent.id %in% roots.id) %>%
+  group_by(parent.id) %>%
+  summarise(size=sum(size)) %>%
+  rename(id = parent.id)
+
+roots_df<-tree_df %>%
+  filter(parent.id %in% roots.id) %>%
+  select(parent.id, parent.name) %>%
+  unique %>%
+  rename(id = parent.id,
+         name = parent.name) %>%
+  merge(roots_size, by='id')
+
+roots_df[duplicated(roots_df$name),]
+
+tt<-data.frame(parent='omictools',
+               parent.id='/root',
+               id=roots.id,
+               name=roots)
+  merge(roots_df, roots_size, by='id')
+tree_df<-rbind(tt,tree_df)
+tree_df<-tree_df %>% 
   mutate(parent=as.character(parent),
          name=as.character(name))
 
-buildNest<-function(df){
-  if(nrow(df)==0){
+buildNest<-function(root_df){
+  if(nrow(root_df)==0){
     return(NA)
   }
   node<-list()
-  roots<-with(df, setdiff(parent, name))
+  roots<-with(root_df, setdiff(parent, name))
   for(root in roots){
-    children<-subset(df, parent==root)$name
-    node[['name']]<-children
+    children<-subset(root_df, parent==root)$name
+    node[['name']]<-root
     node[['children']]<-lapply(children, function(child){
-      sub_df<-subset(cc_df, parent==child)
-      child_node<-buildNest(sub_df)
+      leaf_df<-subset(tree_df, parent==child)
+      child_node<-buildNest(leaf_df)
       if(length(child_node)==0 || is.na(child_node)){
         #message(child)
         #should not use name and parent, use href and parent_href instead!!!
@@ -118,7 +90,7 @@ buildNest<-function(df){
   }
   node
 }
-kk<-buildNest(cc_df)
+kk<-buildNest(tree_df)
 library(listviewer)
 jsonedit(kk)
 
