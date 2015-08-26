@@ -2,7 +2,6 @@ library(jsonlite)
 library(treemap)
 library(d3treeR)
 library(data.tree)
-library(d3Network)
 
 
 d3tree2(
@@ -61,23 +60,32 @@ roots_df<-tree_df %>%
 
 tree_df<-rbind(roots_df, tree_df)
 
+id_name<-tree_df %>%
+  select(id = parent.id,
+         name = parent.name) %>%
+  rbind(tree_df[,c('id', 'name')]) %>%
+  unique %>%
+  dlply(.variables = 'id', .fun=function(x){x$name})
+
+id_size<-tree_df %>%
+  select(id, size) %>%
+  unique %>%
+  dlply(.variables = 'id', .fun=function(x){x$size})
+
 buildNest<-function(root_df){
   if(nrow(root_df)==0){
     return(NA)
   }
   node<-list()
-  roots<-with(root_df, setdiff(parent, name))
-  for(root in roots){
-    children<-subset(root_df, parent==root)$name
-    node[['name']]<-root
-    node[['children']]<-lapply(children, function(child){
-      leaf_df<-subset(tree_df, parent==child)
+  roots.id<-with(root_df, setdiff(parent.id, id))
+  for(root.id in roots.id){
+    children.ids<-subset(root_df, parent.id==root.id)$id
+    node[['name']]<-id_name[[root.id]]
+    node[['children']]<-lapply(children.ids, function(child.id){
+      leaf_df<-subset(tree_df, parent.id==child.id)
       child_node<-buildNest(leaf_df)
       if(length(child_node)==0 || is.na(child_node)){
-        #message(child)
-        #should not use name and parent, use href and parent_href instead!!!
-        v<-unlist(ifelse(is.na(ss_tb[child]), 0, ss_tb[[child]]))
-        list(name=child, size=v)
+        list(name=id_name[[child.id]], size=id_size[[child.id]])
       }else{
         child_node
       }
