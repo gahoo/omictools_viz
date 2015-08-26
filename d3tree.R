@@ -73,23 +73,22 @@ id_size<-tree_df %>%
   dlply(.variables = 'id', .fun=function(x){x$size})
 
 buildNest<-function(root_df){
-  if(nrow(root_df)==0){
-    return(NA)
+  getChildren<-function(child.id){
+    leaf_df<-subset(tree_df, parent.id==child.id)
+    if(nrow(leaf_df) == 0){
+      list(name=id_name[[child.id]],
+           size=id_size[[child.id]])
+    }else{
+      buildNest(leaf_df)
+    }
   }
+  
   node<-list()
   roots.id<-with(root_df, setdiff(parent.id, id))
   for(root.id in roots.id){
     children.ids<-subset(root_df, parent.id==root.id)$id
     node[['name']]<-id_name[[root.id]]
-    node[['children']]<-lapply(children.ids, function(child.id){
-      leaf_df<-subset(tree_df, parent.id==child.id)
-      child_node<-buildNest(leaf_df)
-      if(length(child_node)==0 || is.na(child_node)){
-        list(name=id_name[[child.id]], size=id_size[[child.id]])
-      }else{
-        child_node
-      }
-    })
+    node[['children']]<-lapply(children.ids, getChildren)
   }
   node
 }
@@ -99,6 +98,7 @@ jsonedit(kk)
 
 
 d3tree2(
-  toJSON(kk, auto_unbox = T)
-  , celltext = "name"
+  toJSON(kk, auto_unbox = T),
+  celltext = "name",
+  width = 1200
 )
