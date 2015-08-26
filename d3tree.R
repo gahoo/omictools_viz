@@ -2,6 +2,7 @@ library(jsonlite)
 library(treemap)
 library(d3treeR)
 library(data.tree)
+library(d3Network)
 
 # example 1 from ?treemap
 data(GNI2010)
@@ -106,7 +107,7 @@ buildNest<-function(df){
       sub_df<-subset(cc_df, parent==child)
       child_node<-buildNest(sub_df)
       if(length(child_node)==0 || is.na(child_node)){
-        message(child)
+        #message(child)
         #should not use name and parent, use href and parent_href instead!!!
         v<-unlist(ifelse(is.na(ss_tb[child]), 0, ss_tb[[child]]))
         list(name=child, size=v)
@@ -123,6 +124,6 @@ jsonedit(kk)
 
 
 d3tree2(
-  toJSON(kk)
+  toJSON(kk, auto_unbox = T)
   , celltext = "name"
 )
