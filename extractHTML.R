@@ -59,26 +59,26 @@ software_xpaths<-list(
   img=list(
     xpath="//div[@class='site-preview']/a/img",
     attr='src')
-  )
+)
 
 catalog_folder_xpaths<-list(
   parent_alias=list(
     xpath="id('main')/div[@class='header1 navbar']/h1"),
   parent=list(
-       xpath="id('main')/div[@class='breadcrumb']/a[last()]"),
+    xpath="id('main')/div[@class='breadcrumb']/a[last()]"),
   name=list(
-       xpath="//nav[@class='categories-nav']/ul/li/a",
-       attr='title'),
+    xpath="//nav[@class='categories-nav']/ul/li/a",
+    attr='title'),
   href=list(
-       xpath="//nav[@class='categories-nav']/ul/li/a",
-       attr='href'),
+    xpath="//nav[@class='categories-nav']/ul/li/a",
+    attr='href'),
   img=list(
-       xpath="//nav[@class='categories-nav']/ul/li/a/img",
-       attr='src'),
+    xpath="//nav[@class='categories-nav']/ul/li/a/img",
+    attr='src'),
   count=list(
-      xpath="//nav[@class='categories-nav']/ul/li/span"
-      )
+    xpath="//nav[@class='categories-nav']/ul/li/span"
   )
+)
 
 catalog_software_xpaths<-list(
   parent_desc=list(
@@ -98,7 +98,7 @@ catalog_software_xpaths<-list(
   img=list(
     xpath="//aside[@class='category-site-thumbnail']/a/img",
     attr='src')
-  )
+)
 
 checklink_xpaths<-list(
   href=list(
@@ -107,7 +107,7 @@ checklink_xpaths<-list(
   map=list(
     xpath='//area',
     attr='href')
-  )
+)
 
 
 html_files<-dir('omictools.com/', pattern="*.html")
@@ -139,37 +139,39 @@ checkCatalogUnDownloadLink<-function(htmlfiles, checklink_xpaths){
   unique(un_down[idx])
 }
 
-un_down<-checkCatalogUnDownloadLink(catalog_html_files[1:10], checklink_xpaths)
+un_down<-checkCatalogUnDownloadLink(catalog_html_files, checklink_xpaths)
 print(un_down)
 
-software<-extractInfo(software_html_files[1:10], extractSoftHtmlInfo, software_xpaths)
-catalog<-extractInfo(catalog_html_files[1:10], extractCatalogHtmlInfo)
+software<-extractInfo(software_html_files[1:1000], extractSoftHtmlInfo, software_xpaths)
+catalog<-extractInfo(catalog_html_files, extractCatalogHtmlInfo)
 
 software_df<-software %>%
   lapply(function(x){lapply(x, paste0, collapse = ';')}) %>%
   lapply(as.data.frame) %>%
   ldply(.id='omictools_link')
 
-folder_idx<-catalog %>%
+software_idx<-catalog %>%
   lapply(function(x){is.null(x$count)}) %>%
   unlist
 
-catalog_folder<-catalog[folder_idx]
-catalog_software<-catalog[!folder_idx]
+catalog_folder<-catalog[!software_idx]
+catalog_software<-catalog[software_idx]
 
 catalog_df<-catalog %>%
   lapply(as.data.frame) %>%
-  ldply(.id='parent_href')
+  ldply(.id='parent_href') %>%
+  mutate(parent = gsub(' $', '', gsub('^ ', '', parent)) )
 
 catalog_folder_df<-catalog_df %>%
   filter(!is.na(count)) %>%
-  filter(parent_href %in% catalog_html_files) %>%
+  #  filter(parent_href %in% catalog_html_files) %>%
   select(-parent_desc, -type) %>%
   mutate(count = as.numeric(gsub('[()]', '', as.character(count))) )
 
 catalog_software_df<-catalog_df %>%
   filter(is.na(count)) %>%
-  filter(parent_href %in% catalog_html_files) %>%
+  #  filter(parent_href %in% catalog_html_files) %>%
+  mutate(type = gsub("^Details :.*$", "", type)) %>%
   select(-count)
 
 save(software, software_df, catalog, catalog_software, catalog_folder, catalog_software_df, catalog_folder_df, file='omictools.RData')
