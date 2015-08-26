@@ -24,6 +24,10 @@ d3tree2(
 flare<-fromJSON("http://bl.ocks.org/mbostock/raw/4063582/raw/flare.json")
 jsonedit(flare)
 
+malformed_links<-catalog_folder_df %>%
+  filter(grepl('index', href) |
+         grepl('index', parent_href))
+malformed_links
 
 catalog_tree_df<-catalog_folder_df %>%
   select(parent.id = parent_href,
@@ -37,8 +41,6 @@ catalog_tree_df<-catalog_folder_df %>%
 
 tree_df<-catalog_tree_df
 
-ss_tb<-table(catalog_software_df[['parent']])
-#roots<-with(tree_df, setdiff(parent.name, name))
 roots.id<-with(tree_df, setdiff(parent.id, id))
 roots_size<-tree_df %>%
   filter(parent.id %in% roots.id) %>%
@@ -52,19 +54,12 @@ roots_df<-tree_df %>%
   unique %>%
   rename(id = parent.id,
          name = parent.name) %>%
-  merge(roots_size, by='id')
+  merge(roots_size, by='id') %>%
+  mutate(parent.id = 'c0',
+         parent.name = 'omictools') %>%
+  select(parent.id, parent.name, id, name, size)
 
-roots_df[duplicated(roots_df$name),]
-
-tt<-data.frame(parent='omictools',
-               parent.id='/root',
-               id=roots.id,
-               name=roots)
-  merge(roots_df, roots_size, by='id')
-tree_df<-rbind(tt,tree_df)
-tree_df<-tree_df %>% 
-  mutate(parent=as.character(parent),
-         name=as.character(name))
+tree_df<-rbind(roots_df, tree_df)
 
 buildNest<-function(root_df){
   if(nrow(root_df)==0){
