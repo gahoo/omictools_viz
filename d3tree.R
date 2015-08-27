@@ -9,6 +9,14 @@ malformed_links<-catalog_folder_df %>%
          grepl('index', parent_href))
 malformed_links
 
+#manually fix malformed_links
+malform_idx<-grep('index', catalog_folder_df$href)
+catalog_folder_df[malform_idx, ]$href<-c('rna-structures-c933-p1.html',
+                                         'genomic-variation-c214-p1.html',
+                                         'genomic-variation-c214-p1.html',
+                                         'alternative-splicing-c436-p1.html')
+
+
 catalog_tree_df<-catalog_folder_df %>%
   select(parent.id = parent_href,
          parent.name = parent,
@@ -30,10 +38,9 @@ addRoots<-function(tree_df, root_name){
   
   roots_df<-tree_df %>%
     filter(parent.id %in% roots.id) %>%
-    select(parent.id, parent.name) %>%
-    unique %>%
-    rename(id = parent.id,
+    select(id = parent.id,
            name = parent.name) %>%
+    unique %>%
     merge(roots_size, by='id') %>%
     mutate(parent.id = 'c0',
            parent.name = root_name) %>%
@@ -100,3 +107,9 @@ d3tree2(
   celltext = "name",
   width = 1200
 )
+
+
+
+software_tree_df<-catalog_software_df %>%
+  select(parent.id = parent_href) %>%
+  head
