@@ -1,28 +1,9 @@
 library(jsonlite)
-library(treemap)
 library(d3treeR)
-library(data.tree)
+library(plyr)
+library(dplyr)
 
-
-d3tree2(
-  treemap(
-    catalog_folder_df,
-    ,index=c("parent", "name")
-    ,vSize="count"
-    #,vColor="GNI"
-    ,type="value"
-  )
-  , rootname = "Omictools"
-)
-
-d3tree2(
-  "http://bl.ocks.org/mbostock/raw/4063269/flare.json"
-  , celltext = "name"
-)
-
-flare<-fromJSON("http://bl.ocks.org/mbostock/raw/4063582/raw/flare.json")
-jsonedit(flare)
-
+load('omictools.RData')
 malformed_links<-catalog_folder_df %>%
   filter(grepl('index', href) |
          grepl('index', parent_href))
@@ -38,48 +19,58 @@ catalog_tree_df<-catalog_folder_df %>%
          id = gsub('^.*-', '', gsub('-p1.html', '', id)) ) %>%
   unique
 
-tree_df<-catalog_tree_df
+addRoots<-function(tree_df, root_name){
+  roots.id<-with(tree_df, setdiff(parent.id, id))
 
-roots.id<-with(tree_df, setdiff(parent.id, id))
-roots_size<-tree_df %>%
-  filter(parent.id %in% roots.id) %>%
-  group_by(parent.id) %>%
-  summarise(size=sum(size)) %>%
-  rename(id = parent.id)
+  roots_size<-tree_df %>%
+    filter(parent.id %in% roots.id) %>%
+    group_by(parent.id) %>%
+    summarise(size=sum(size)) %>%
+    rename(id = parent.id)
+  
+  roots_df<-tree_df %>%
+    filter(parent.id %in% roots.id) %>%
+    select(parent.id, parent.name) %>%
+    unique %>%
+    rename(id = parent.id,
+           name = parent.name) %>%
+    merge(roots_size, by='id') %>%
+    mutate(parent.id = 'c0',
+           parent.name = root_name) %>%
+    select(parent.id, parent.name, id, name, size)
+  
+  rbind(roots_df, tree_df)
+}
 
-roots_df<-tree_df %>%
-  filter(parent.id %in% roots.id) %>%
-  select(parent.id, parent.name) %>%
-  unique %>%
-  rename(id = parent.id,
-         name = parent.name) %>%
-  merge(roots_size, by='id') %>%
-  mutate(parent.id = 'c0',
-         parent.name = 'omictools') %>%
-  select(parent.id, parent.name, id, name, size)
 
-tree_df<-rbind(roots_df, tree_df)
+id2name<-function(tree_df){
+  tree_df %>%
+    select(id = parent.id,
+           name = parent.name) %>%
+    rbind(tree_df[,c('id', 'name')]) %>%
+    unique %>%
+    dlply(.variables = 'id', .fun=function(x){x$name})
+}
 
-id_name<-tree_df %>%
-  select(id = parent.id,
-         name = parent.name) %>%
-  rbind(tree_df[,c('id', 'name')]) %>%
-  unique %>%
-  dlply(.variables = 'id', .fun=function(x){x$name})
+id2any<-function(tree_df, column){
+  if(is.null(tree_df[[column]])){
+    stop(column, " not exists")
+  }
+  
+  tree_df %>%
+    select_('id', column) %>%
+    unique %>%
+    dlply(.variables = 'id', .fun=function(x){x[[column]]})
+}
 
-id_size<-tree_df %>%
-  select(id, size) %>%
-  unique %>%
-  dlply(.variables = 'id', .fun=function(x){x$size})
-
-buildNest<-function(root_df){
+buildNestedList<-function(root_df, env){
   getChildren<-function(child.id){
     leaf_df<-subset(tree_df, parent.id==child.id)
     if(nrow(leaf_df) == 0){
       list(name=id_name[[child.id]],
            size=id_size[[child.id]])
     }else{
-      buildNest(leaf_df)
+      buildNestedList(leaf_df, env)
     }
   }
   
@@ -92,13 +83,20 @@ buildNest<-function(root_df){
   }
   node
 }
-kk<-buildNest(tree_df)
-library(listviewer)
-jsonedit(kk)
 
+df2NestedList<-function(tree_df, root_name='root', vSize='size'){    
+  tree_df<-addRoots(tree_df, root_name)
+  id_name<-id2name(tree_df)
+  id_size<-id2any(tree_df, vSize)
+  
+  environment(buildNestedList) <- environment()
+  buildNestedList(tree_df, env=env)
+}
+
+omictools<-df2NestedList(catalog_tree_df, 'omictools')
 
 d3tree2(
-  toJSON(kk, auto_unbox = T),
+  toJSON(omictools, auto_unbox = T),
   celltext = "name",
   width = 1200
 )
