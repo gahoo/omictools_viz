@@ -5,8 +5,8 @@ library(dplyr)
 
 load('omictools.RData')
 malformed_links<-catalog_folder_df %>%
-  filter(grepl('index', href) |
-         grepl('index', parent_href))
+  filter(grepl('index.html', href) |
+         grepl('index.html', parent_href))
 malformed_links
 
 #manually fix malformed_links
@@ -112,7 +112,61 @@ d3tree2(
   #width = 1200
 )
 
+############# catalog_software_df
+write.utf8 <- function(filename, msg="") {
+  con <- file(filename, "w")
+  tryCatch({
+    cat(iconv(msg, to="UTF-8"), file=con, sep="\n")
+  },
+  finally = {
+    close(con)
+  })
+}
+
+
+malformed_links<-catalog_software_df %>%
+  filter(grepl('index.html', href) |
+           grepl('index.html', parent_href))
+malformed_links
+
+software_size <- software_df %>%
+  select(id = omictools_link, Overall_rating) %>%
+  mutate(stars = as.numeric(gsub(" /.*", "", Overall_rating)),
+         rate_cnts = as.numeric(gsub(".*for | rate$","",Overall_rating)),
+         size = stars * rate_cnts + 1,
+         #size = 1,
+         Overall_rating = NULL)
 
 software_tree_df<-catalog_software_df %>%
-  select(parent.id = parent_href) %>%
-  head
+  select(parent.id = parent_href,
+         parent.name = parent,
+         id = href,
+         name) %>%
+  #merge(software_size, by='id') %>%
+  mutate(parent.id = gsub('^.*-', '', gsub('-p1.html', '', parent.id)),
+         #perfect size must consider parent size, total size should not greater than parent size
+         size = log2(nchar(name)),
+         id = gsub('^.*-', '', gsub('.html', '', id)) ) %>%
+  unique %>%
+  select(parent.id, parent.name, id, name, size)
+  #filter(size > 1)
+
+save(software_tree_df, file='test.RData')
+load('test.RData')
+
+#manually fixed strange name cause json unable to parse by d3tree2
+#software_tree_df[c(2819,7523),]$name<-c('EM-SNP', 'PRODORIC')
+software_tree_df[c(8878,557),]$name<-c('EM-SNP', 'PRODORIC')
+software_tree_df<-rbind(catalog_tree_df, software_tree_df)
+
+
+omictools<-df2NestedList(software_tree_df, 'omictools')
+
+write.utf8(msg=toJSON(omictools, auto_unbox = T, pretty = F),
+           file='omictools.json')
+
+d3tree2(
+  'omictools.json',
+  celltext = "name"
+  #width = 1200
+)
