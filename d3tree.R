@@ -100,14 +100,17 @@ df2NestedList<-function(tree_df, root_name='root', vSize='size'){
   buildNestedList(tree_df, env=env)
 }
 
+#load manually fixed roots
+catalog_tree_df<-read.table('roots.txt', header=T, sep='\t') %>%
+  rbind(catalog_tree_df)
+
 omictools<-df2NestedList(catalog_tree_df, 'omictools')
 
 d3tree2(
   toJSON(omictools, auto_unbox = T),
-  celltext = "name",
-  width = 1200
+  celltext = "name"
+  #width = 1200
 )
-
 
 
 software_tree_df<-catalog_software_df %>%

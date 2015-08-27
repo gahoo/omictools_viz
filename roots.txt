@@ -1,0 +1,28 @@
+parent.id	parent.name	id	name	size
+c0.5	By application	c1387	Bioimaging	179
+c0.5	By application	c319	Common omic tools	285
+c0.5	By application	c1331	Cytometry	78
+c0.5	By application	c501	nCounter System	4
+c0.5	By application	c512	Mass spectrometry	530
+c0.5	By application	c299	Microarray	602
+c0.5	By application	c861	NMR spectroscopy	111
+c0.5	By application	c502	PCR	120
+c0.5	By application	c152	Sequencing	3231
+c0.7	By functional	c1176	Biochemical networks	538
+c0.7	By functional	c1312	Biomolecular structure	930
+c0.7	By functional	c1172	Drug discovery	607
+c0.7	By functional	c377	Educational resources	149
+c0.7	By functional	c221	Epigenomics	43
+c0.7	By functional	c1413	Fluxomics	59
+c0.7	By functional	c899	Genetic associations	314
+c0.7	By functional	c1265	Genome editing	55
+c0.7	By functional	c1	Genomics	1353
+c0.7	By functional	c1111	Health sciences	241
+c0.7	By functional	c431	Immunology	107
+c0.7	By functional	c1295	Metabolic engineering	29
+c0.7	By functional	c1177	Metabolomics	34
+c0.7	By functional	c1161	Proteomics	601
+c0.7	By functional	c933	Gene prioritization	42
+c0.7	By functional	c1269	Synthetic biology	163
+c0.7	By functional	c50	Text-mining	159
+c0.7	By functional	c1178	Transcriptomics	519
