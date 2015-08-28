@@ -22,7 +22,7 @@ c0.7	By functional	c431	Immunology	107
 c0.7	By functional	c1295	Metabolic engineering	29
 c0.7	By functional	c1177	Metabolomics	34
 c0.7	By functional	c1161	Proteomics	601
-c0.7	By functional	c933	Gene prioritization	42
+c0.7	By functional	c1423	Gene prioritization	42
 c0.7	By functional	c1269	Synthetic biology	163
 c0.7	By functional	c50	Text-mining	159
 c0.7	By functional	c1178	Transcriptomics	519
