@@ -15,7 +15,9 @@ catalog_folder_df[malform_idx, ]$href<-c('rna-structures-c933-p1.html',
                                          'genomic-variation-c214-p1.html',
                                          'genomic-variation-c214-p1.html',
                                          'alternative-splicing-c436-p1.html')
-
+#manually fix merged catalog
+#fix_idx<-grep('repetitive-dna-c486-p1.html', catalog_folder_df$href)
+#catalog_folder_df$href[fix_idx] <- 'microsatellite-detection-c287-p1.html'
 
 catalog_tree_df<-catalog_folder_df %>%
   select(parent.id = parent_href,
@@ -70,14 +72,14 @@ id2any<-function(tree_df, column){
     dlply(.variables = 'id', .fun=function(x){x[[column]]})
 }
 
-buildNestedList<-function(root_df, env){
+buildNestedList<-function(root_df){
   getChildren<-function(child.id){
     leaf_df<-subset(tree_df, parent.id==child.id)
     if(nrow(leaf_df) == 0){
       list(name=id_name[[child.id]],
            size=id_size[[child.id]])
     }else{
-      buildNestedList(leaf_df, env)
+      buildNestedList(leaf_df)
     }
   }
   
@@ -97,19 +99,25 @@ df2NestedList<-function(tree_df, root_name='root', vSize='size'){
   id_size<-id2any(tree_df, vSize)
   
   environment(buildNestedList) <- environment()
-  buildNestedList(tree_df, env=env)
+  buildNestedList(tree_df)
 }
 
 #load manually fixed roots
 catalog_tree_df<-read.table('roots.txt', header=T, sep='\t') %>%
-  rbind(catalog_tree_df)
+  rbind(catalog_tree_df) %>%
+  mutate(parent.id = as.character(parent.id),
+         parent.name = as.character(parent.name),
+         id = as.character(id),
+         name = as.character(name)
+         )
 
 omictools<-df2NestedList(catalog_tree_df, 'omictools')
 
+
 d3tree2(
   toJSON(omictools, auto_unbox = T),
-  celltext = "name"
-  #width = 1200
+  celltext = "name",
+  width = 1200
 )
 
 ############# catalog_software_df
@@ -137,6 +145,10 @@ software_size <- software_df %>%
          #size = 1,
          Overall_rating = NULL)
 
+parent_size <- catalog_tree_df %>%
+  select(parent.id=id, parent.size=size)
+
+
 software_tree_df<-catalog_software_df %>%
   select(parent.id = parent_href,
          parent.name = parent,
@@ -145,18 +157,22 @@ software_tree_df<-catalog_software_df %>%
   #merge(software_size, by='id') %>%
   mutate(parent.id = gsub('^.*-', '', gsub('-p1.html', '', parent.id)),
          #perfect size must consider parent size, total size should not greater than parent size
-         size = log2(nchar(name)),
+         log.size = log(nchar(name)),
          id = gsub('^.*-', '', gsub('.html', '', id)) ) %>%
   unique %>%
+  select(parent.id, parent.name, id, name, log.size) %>%
+  group_by(parent.id) %>%
+  mutate(log.total=sum(log.size)) %>%
+  merge(parent_size) %>%
+  mutate(size = parent.size * log.size / log.total) %>%
   select(parent.id, parent.name, id, name, size)
-  #filter(size > 1)
 
-save(software_tree_df, file='test.RData')
-load('test.RData')
+#save(software_tree_df, file='test.RData')
+#load('test.RData')
 
 #manually fixed strange name cause json unable to parse by d3tree2
 #software_tree_df[c(2819,7523),]$name<-c('EM-SNP', 'PRODORIC')
-software_tree_df[c(8878,557),]$name<-c('EM-SNP', 'PRODORIC')
+software_tree_df[c(2263,7909),]$name<-c('EM-SNP', 'PRODORIC')
 software_tree_df<-rbind(catalog_tree_df, software_tree_df)
 
 
@@ -170,3 +186,5 @@ d3tree2(
   celltext = "name"
   #width = 1200
 )
+
+save(catalog_tree_df, software_tree_df, omictools, file='omictools_tree.RData')
