@@ -7,17 +7,24 @@ runtime: shiny
 ---
 
 
-```{r, echo=FALSE, eval=T}
+```{r, echo=FALSE, eval=T, warning=FALSE, message=FALSE}
 library(shiny)
 library(jsonlite)
 library(d3treeR)
 library(DT)
+library(reshape2)
+library(dplyr)
+load('omictools.RData')
 load('omictools_tree.RData')
+software_df<-software_df %>%
+  mutate(id = gsub('^.*-', '', gsub('.html', '', omictools_link)) )
 
 ui <- fluidPage(
   d3tree2Output( 'tree' ),
   textOutput( "clickedinfo", container = p ),
-  DT::dataTableOutput('catalog')
+  DT::dataTableOutput('catalog'),
+  DT::dataTableOutput('detail')
+  #textOutput( "detail", container = p )
 )
 
 server <- function( input, output, session ){
@@ -38,12 +45,32 @@ server <- function( input, output, session ){
   })
 
   output$clickedinfo <- renderText(input$tree_click$name)
-  output$catalog <- DT::renderDataTable(v$table)
+  output$catalog <- DT::renderDataTable({
+    datatable(v$table, selection = 'single') %>%
+      formatStyle(
+        'size',
+        background = styleColorBar(v$table$size, 'steelblue'),
+        backgroundSize = '100% 90%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
+      )
+    })
+  output$detail <- DT::renderDataTable({
+    sid = v$table[input$catalog_row_last_clicked,]$id
+    message(sid)
+    
+    software_df %>%
+      filter(id == sid) %>%
+      melt(id.vars='omictools_link', na.rm=T) %>%
+      select(-omictools_link) %>%
+      datatable %>%
+      formatStyle('variable', fontWeight='bold')
+    })
 }
 
 shinyApp( ui, server,
           options=list(
-            width="100%", height="1024")
+            width="100%", height="1440")
           )
 ```
 
@@ -52,6 +79,7 @@ library(jsonlite)
 library(d3treeR)
 library(DT)
 library(listviewer)
+library(reshape2)
 load('omictools_tree.RData')
 
 renderD3tree2({
