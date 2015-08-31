@@ -67,7 +67,10 @@ shinyServer(function(input, output) {
   output$catalog <- DT::renderDataTable({
     merge(name_links, v$table, by='id', all.y=T) %>%
     datatable(selection = 'single', rownames=T, escape = FALSE,
-              options=list(pageLength=5)) %>%
+              options=list(paging=F,
+                           scrollY="280px",
+                           scrollCollapse=T)
+              ) %>%
       formatStyle(
         'size',
         background = styleColorBar(v$table$size, 'steelblue'),
