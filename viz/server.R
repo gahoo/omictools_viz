@@ -10,21 +10,8 @@ library(dplyr)
 load('../omictools.RData')
 load('../omictools_tree.RData')
 
-build_a<-function(X){
-  build_each_a<-function(x){
-    if(is.na(x)){
-      return(x)
-    }
-    
-    if(length(grep(';', x))>0){
-      x<-unlist(strsplit(x, split=';'))
-    }
-    
-    sapply(x, sprintf, fmt='<a href="%s">%s</a>', x, x) %>%
-      paste0(collapse = ' ')
-  }
-  
-  sapply(as.character(X), build_each_a)
+build_a<-function(x){
+  ifelse(is.na(x), NA, sprintf('<a href="%s">%s</a>', x, x))
 }
 
 software_df<-software_df %>%
