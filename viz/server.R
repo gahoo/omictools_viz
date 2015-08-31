@@ -22,32 +22,45 @@ shinyServer(function(input, output) {
   })
   
   v <- reactiveValues(table = NULL,
-                      last_click = "",
-                      cid_chain = c())
+                      last = NULL)
   
   observeEvent(input$tree_click, {
+    getUniqId<-function(click_name){
+      
+      cur<-tree_df %>%
+        filter(parent.name == click_name) %>%
+        select(parent.id, id) %>%
+        unique
+      
+      str(cur)
+      
+      nid <- length(unique(cur$parent.id))
+      
+      
+      if(nid == 1){
+        parent.id <- cur$parent.id
+      }else{
+        parent.id<-intersect(v$last$id, cur$parent.id)
+        cur <- cur[cur$parent.id == parent.id, ]
+      }
+      v$last<-cur
+      unique(parent.id)
+      
+    }
+    
     #without catalog id, might not be able to get correct info since same name exists
-    cid <- unique(subset(catalog_tree_df, parent.name == input$tree_click$name)$parent.id)
-    last_cid <- v$cid_chain[length(v$cid_chain)]
-    cids <- unique(subset(catalog_tree_df, parent.id == last_cid)$id)
-    v$table <- subset(catalog_tree_df,
-                      parent.name == input$tree_click$name &
-                        parent.id %in% cids)
     
+    p.id<-getUniqId(input$tree_click$name)
+    message(parent.id)
+    
+    v$table <- subset(catalog_tree_df, parent.id == p.id)
     if(nrow(v$table)==0){
-      v$table <- subset(software_tree_df, parent.name == input$tree_click$name)
+      v$table <- subset(software_tree_df, parent.id == p.id)
     }
     
-    if( !(cid %in% v$cid_chain) ){
-      v$last_click <- input$tree_click$name
-      v$cid_chain <- c(v$cid_chain, cid)
-    }else{
-      v$cid_chain <- v$cid_chain[-length(v$cid_chain)]
-    }
-    print(v$cid_chain)
   })
   
-  output$clickedinfo <- renderText(str(input$tree_click))
+  output$clickedinfo <- renderText(input$tree_click$name)
   output$catalog <- DT::renderDataTable({
     datatable(v$table, selection = 'single', rownames=T) %>%
       formatStyle(
