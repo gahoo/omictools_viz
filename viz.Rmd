@@ -19,12 +19,14 @@ load('omictools_tree.RData')
 software_df<-software_df %>%
   mutate(id = gsub('^.*-', '', gsub('.html', '', omictools_link)) )
 
-ui <- fluidPage(
-  d3tree2Output( 'tree' ),
-  textOutput( "clickedinfo", container = p ),
-  DT::dataTableOutput('catalog'),
-  DT::dataTableOutput('detail')
+ui <- fluidPage(fluidRow(
+  column(6,
+         d3tree2Output( 'tree' ),
+         textOutput( "clickedinfo", container = p ),
+         DT::dataTableOutput('catalog')),
+  column(6, DT::dataTableOutput('detail'))
   #textOutput( "detail", container = p )
+  )
 )
 
 server <- function( input, output, session ){
