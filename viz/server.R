@@ -11,6 +11,13 @@ load('../omictools_tree.RData')
 software_df<-software_df %>%
   mutate(id = gsub('^.*-', '', gsub('.html', '', omictools_link)) )
 
+catalog_desc<-catalog_software_df %>%
+  mutate( id = gsub('^.*-', '', gsub('-p1.html', '', parent_href)) ) %>%
+  select(id,
+         alias = parent_alias,
+         description = parent_desc) %>%
+  unique
+
 tree_df<-rbind(catalog_tree_df, software_tree_df)
 
 shinyServer(function(input, output) {
@@ -21,48 +28,18 @@ shinyServer(function(input, output) {
             width="100%")
   })
   
-  v <- reactiveValues(table = NULL,
-                      last = NULL)
+  v <- reactiveValues(table = NULL)
   
   observeEvent(input$tree_click, {
-    getUniqId<-function(click_name){
-      
-      cur<-tree_df %>%
-        filter(parent.name == click_name) %>%
-        select(parent.id, id) %>%
-        unique
-      
-      str(cur)
-      
-      nid <- length(unique(cur$parent.id))
-      
-      
-      if(nid == 1){
-        parent.id <- cur$parent.id
-      }else{
-        parent.id<-intersect(v$last$id, cur$parent.id)
-        cur <- cur[cur$parent.id == parent.id, ]
-      }
-      v$last<-cur
-      unique(parent.id)
-      
-    }
-    
     #without catalog id, might not be able to get correct info since same name exists
-    
-    p.id<-getUniqId(input$tree_click$name)
-    message(parent.id)
-    
-    v$table <- subset(catalog_tree_df, parent.id == p.id)
-    if(nrow(v$table)==0){
-      v$table <- subset(software_tree_df, parent.id == p.id)
-    }
-    
+    v$table <- subset(tree_df, parent.name == input$tree_click$name) %>%
+      merge(software_df[c('id', 'Type_of_tool')], by='id', all.x=T)
   })
   
   output$clickedinfo <- renderText(input$tree_click$name)
   output$catalog <- DT::renderDataTable({
-    datatable(v$table, selection = 'single', rownames=T) %>%
+    datatable(v$table, selection = 'single', rownames=T,
+              options=list(pageLength=5)) %>%
       formatStyle(
         'size',
         background = styleColorBar(v$table$size, 'steelblue'),
@@ -73,17 +50,22 @@ shinyServer(function(input, output) {
   })
   
   output$detail <- DT::renderDataTable({
-    sid = v$table[input$catalog_row_last_clicked,]$id
-    #message(sid)
-    #message(input$catalog_row_last_clicked)
+    clicked_id = v$table[input$catalog_row_last_clicked,]$id
+    if(substr(clicked_id,1,1) == 'c'){
+      detail<-catalog_desc %>%
+        filter(id == clicked_id) %>%
+        melt(id.vars='id', na.rm=T) %>%
+        select(-id)
+    }else{
+      detail<-software_df %>%
+        filter(id == clicked_id) %>%
+        melt(id.vars='omictools_link', na.rm=T) %>%
+        select(-omictools_link)
+    }
     
-    software_df %>%
-      filter(id == sid) %>%
-      melt(id.vars='omictools_link', na.rm=T) %>%
-      select(-omictools_link) %>%
-      datatable(selection = 'none', rownames=F,
-                options = list(paging=F,
-                               dom = 't')) %>%
+    datatable(detail, selection = 'none', rownames=F,
+              options = list(paging=F,
+                             dom = 't')) %>%
       formatStyle('variable', fontWeight='bold')
   })
 })
