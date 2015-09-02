@@ -2,6 +2,9 @@ library(leaflet)
 library(XML)
 library(RISmed)
 library(ggmap)
+library(tidyr)
+library(stringr)
+library(reshape2)
 
 load('omictools.RData')
 geocode<-function(address){
@@ -58,10 +61,35 @@ address_pubmed_df<-data.frame(pid = PMID(fetch),
   within(affiliation[na.idx] <- Created_at[na.idx]) %>%
   select(id, pid, affiliation, cited)
 
+semicolon_cnt<-address_pubmed_df$affiliation %>%
+  str_count(';') %>%
+  max(na.rm=T)
+
+address_gather_pubmed_df<-address_pubmed_df %>%
+  separate(affiliation, paste0('address.',1:semicolon_cnt),
+           sep='; and |; |;', extra = 'merge') %>%
+  gather(address_num, address, starts_with('address.') ) %>%
+  mutate(address = gsub('\\. *.*@.*$','.',address)) %>%
+  filter(!is.na(address))
+  
+
 na.idx<-is.na(address_pubmed_df$affiliation)
 addresses<-gsub('\\..*$','',address_pubmed_df$affiliation[!na.idx])
 
-address_lat_lng<-geocode(addresses, output='more')
+address_lat_lng<-list()
+address_lat_lng[[1]]<-geocode(addresses[1:2500], source = 'google', output='more')
+address_lat_lng[[2]]<-geocode(addresses[2501:5000], source = 'google', output='more')
+address_lat_lng[[3]]<-geocode(addresses[2501:5000], source = 'google', output='more')
+address_lat_lng[[4]]<-geocode(addresses[5001:7500], source = 'google', output='more')
+address_lat_lng[[5]]<-geocode(addresses[7501:8426], source = 'google', output='more')
+
+llply(1197:8426, function(i){
+  address_lat_lng[[i]]<<-geocode(addresses[i], source = 'google', output='more')
+  Sys.sleep(0.2)
+}, .progress = 'text')
+
+i
+geocode(addresses[3], source = 'google', output='more')
 
 getGeo<-function(addresses){
   llply(addresses, function(addr){
@@ -71,9 +99,9 @@ getGeo<-function(addresses){
 }
 
 
-addresses<-lapply(0:17, function(x){
-  start<-x*500 + 1
-  end<-(x+1)*500
+addresses<-lapply(0:3, function(x){
+  start<-x*2500 + 1
+  end<-(x+1)*2500
   addresses<-addresses[start:end]
   idx<-!is.na(addresses)
   addresses[idx]
@@ -81,7 +109,7 @@ addresses<-lapply(0:17, function(x){
 
 addresses_lat_lng<-llply(addresses, function(addr){
   Sys.sleep(20)
-  getGeo(addr)
+  geocode(addr)
   },.progress='text')
 
 
@@ -89,7 +117,7 @@ names(addresses_lat_lng)<-address_pubmed_df$id[!na.idx]
 
 addr_lat_lng<-ldply(lapply(addresses_lat_lng, as.data.frame), .id='id') %>%
   filter(!is.na(lat)) %>%
-  merge(address_pubmed_df, by='id')
+  merge(address_pubmed_df, by='id') 
 
 leaflet(addr_lat_lng) %>%
   setView(lng=124, lat=26, zoom=1) %>%
