@@ -69,22 +69,14 @@ address_gather_pubmed_df<-address_pubmed_df %>%
   separate(affiliation, paste0('address.',1:semicolon_cnt),
            sep='; and |; |;', extra = 'merge') %>%
   gather(address_num, address, starts_with('address.') ) %>%
-  mutate(address = gsub('\\. *.*@.*$','.',address)) %>%
+  mutate(address = gsub('\\. *.*@.*$|\\.$', '',address)) %>% #deal with extra email
   filter(!is.na(address))
   
-
-na.idx<-is.na(address_pubmed_df$affiliation)
-addresses<-gsub('\\..*$','',address_pubmed_df$affiliation[!na.idx])
-
+addresses<-address_gather_pubmed_df$address
 address_lat_lng<-list()
-address_lat_lng[[1]]<-geocode(addresses[1:2500], source = 'google', output='more')
-address_lat_lng[[2]]<-geocode(addresses[2501:5000], source = 'google', output='more')
-address_lat_lng[[3]]<-geocode(addresses[2501:5000], source = 'google', output='more')
-address_lat_lng[[4]]<-geocode(addresses[5001:7500], source = 'google', output='more')
-address_lat_lng[[5]]<-geocode(addresses[7501:8426], source = 'google', output='more')
-
-llply(1197:8426, function(i){
-  address_lat_lng[[i]]<<-geocode(addresses[i], source = 'google', output='more')
+llply(1:nrow(address_gather_pubmed_df), function(i){
+  address_lat_lng[[i]]<<-geocode(addresses[i], source = 'google',
+                                 output='all', messaging = F)
   Sys.sleep(0.2)
 }, .progress = 'text')
 
