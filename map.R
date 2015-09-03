@@ -77,8 +77,13 @@ address_lat_lng<-list()
 llply(1:nrow(address_gather_pubmed_df), function(i){
   address_lat_lng[[i]]<<-geocode(addresses[i], source = 'google',
                                  output='all', messaging = F)
+  if(geocodeQueryCheck()<10){
+    break
+  }
   Sys.sleep(0.2)
 }, .progress = 'text')
+
+save(address_lat_lng, file='address_lat_lng.RData')
 
 i
 geocode(addresses[3], source = 'google', output='more')
