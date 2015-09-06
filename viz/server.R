@@ -5,45 +5,17 @@ library(DT)
 library(reshape2)
 library(plyr)
 library(dplyr)
+library(leaflet)
 
-
-load('../omictools.RData')
-load('../omictools_tree.RData')
-
-build_a<-function(x){
-  ifelse(is.na(x), NA, sprintf('<a href="%s">%s</a>', x, x))
+load('viz.RData')
+cid2sid<-function(cid){
+  child.ids<-subset(catalog_tree_df, parent.id == cid)$id
+  if(length(child.ids) == 0){
+    subset(software_tree_df, parent.id == cid)$id
+  }else{
+    unique(unlist(lapply(child.ids, cid2sid)))
+  }
 }
-
-software_df<-software_df %>%
-  mutate(id = gsub('^.*-', '', gsub('.html', '', omictools_link)),
-         related = gsub(';', '; ', related),
-         catalog = gsub(';', '> ', catalog),
-         img = sprintf("<img src='%s'/>", img),
-         link = build_a(link),
-         PubMed = build_a(PubMed),
-         URL = build_a(URL) )
-
-catalog_desc<-catalog_software_df %>%
-  mutate( id = gsub('^.*-', '', gsub('-p1.html', '', parent_href)) ) %>%
-  select(id,
-         alias = parent_alias,
-         description = parent_desc) %>%
-  unique
-
-tree_df<-rbind(catalog_tree_df, software_tree_df)
-
-name_links<-rbind.fill(catalog_folder_df,
-               catalog_software_df) %>%
-  select(href = parent_href,
-         name = parent) %>%
-  rbind(catalog_folder_df[c('href', 'name')],
-        catalog_software_df[c('href', 'name')])  %>%
-  unique %>%
-  mutate(id = gsub('^.*-', '', gsub('-p1.html|.html', '', href)),
-         name = sprintf('<a href="http://omictools.com/%s">%s</a>', href, name) ) %>%
-  select(-href)
-
-name_links<-name_links[!duplicated(name_links$id),]
 
 shinyServer(function(input, output) {
   
@@ -61,15 +33,43 @@ shinyServer(function(input, output) {
       merge(software_df[c('id', 'Type_of_tool')], by='id', all.x=T) %>%
       select(-name) %>%
       unique
+    
+    #leaflet
+    pid <- unique(subset(catalog_tree_df, parent.name == input$tree_click$name)$parent.id)
+    if(length(pid) == 0){
+      sid <- unique(v$table$id)
+    }else{
+      sid <- unlist(lapply(pid, cid2sid))
+    }
+    
+    clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid)
+    message(pid,'\t', nrow(clicked_lat_lng))
+    proxy <- leafletProxy("map", data = clicked_lat_lng) %>%
+      clearMarkers() 
+      
+    
+    if(nrow(clicked_lat_lng) != 0){
+      proxy %>%
+        addCircleMarkers(~lng, ~lat,
+                         radius = ~log2(cited + 1) + 5,
+                         #opacity = ~sqrt(cited) + 10,
+                         popup = ~name,
+                         stroke = F)
+    }
+    
   })
   
   output$clickedinfo <- renderText(input$tree_click$name)
   output$catalog <- DT::renderDataTable({
+    if(length(v$table) == 0 || is.null(v$table)){
+      return(NULL)
+    }
+    
     merge(name_links, v$table, by='id', all.y=T) %>%
     datatable(selection = 'single', rownames=T, escape = FALSE,
               options=list(paging=F,
                            scrollY="280px",
-                           scrollCollapse=T)
+                           scrollCollapse=F)
               ) %>%
       formatStyle(
         'size',
@@ -98,9 +98,16 @@ shinyServer(function(input, output) {
     }
     
     datatable(detail, selection = 'none', rownames=F,
-              width = '500px', escape = FALSE,
+              #width = '500px',
+              escape = FALSE,
               options = list(paging=F,
                              dom = 't')) %>%
       formatStyle('variable', fontWeight='bold')
+  })
+  
+  output$map<-renderLeaflet({
+    leaflet() %>%
+      setView(lng=0, lat=0, zoom=1) %>%
+      addTiles()
   })
 })
