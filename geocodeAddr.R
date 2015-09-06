@@ -15,6 +15,8 @@ address_gather_pubmed_df<-address_pubmed_df %>%
   gather(address_num, address, starts_with('address.') ) %>%
   mutate(address = gsub('\\. *.*@.*$|\\.$', '',address)) %>% #deal with extra email
   filter(!is.na(address))
+
+save(address_gather_pubmed_df, file='address_pubmed.RData')
   
 addresses<-address_gather_pubmed_df$address
 address_lat_lng<-list()
