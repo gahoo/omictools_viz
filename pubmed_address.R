@@ -1,7 +1,6 @@
 library(RISmed)
 library(tidyr)
 library(stringr)
-library(reshape2)
 
 load('omictools.RData')
 
@@ -18,21 +17,6 @@ pids<-address_df %>%
   unique
 
 fetch<-EUtilsGet(pids)
-
-length(pids)
-
-pids<-lapply(0:17, function(x){
-  start<-x*500 + 1
-  end<-(x+1)*500
-  pid<-pids[start:end]
-  idx<-!is.na(pid)
-  pid[idx]
-})
-
-fetch<-llply(pids, function(pid){
-  EUtilsGet(pid)
-  Sys.sleep(10)
-  }, .progress='text')
 
 #save(fetch, address_pubmed_df, file='PubMed.RData')
 load('PubMed.RData')
