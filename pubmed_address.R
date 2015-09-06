@@ -1,7 +1,4 @@
-library(leaflet)
-library(XML)
 library(RISmed)
-library(ggmap)
 library(tidyr)
 library(stringr)
 library(reshape2)

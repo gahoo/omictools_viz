@@ -1,11 +1,6 @@
-library(plyr)
-library(dplyr)
 library(ggmap)
-library(tidyr)
-library(stringr)
 
 load('address_pubmed.RData')
-  
 addresses<-address_gather_pubmed_df$address
 address_lat_lng<-list()
 load('address_lat_lng.RData')
