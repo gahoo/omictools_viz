@@ -44,12 +44,12 @@ NULLtoNA <- function(x) {
   ifelse(is.null(x), NA, x)
 }
 
-#codes from ggmap::geocode
+
 addr_list2df<-function(gc){
   if(is.na(gc) || gc$status == 'ZERO_RESULTS' || gc$status == 'OVER_QUERY_LIMIT'){
     return(NULL)
   }
-  
+  #codes from ggmap::geocode
   with(gc$results[[1]], {
     data.frame(lng = NULLtoNA(geometry$location$lng),
                lat = NULLtoNA(geometry$location$lat), 
