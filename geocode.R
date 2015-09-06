@@ -4,19 +4,7 @@ library(ggmap)
 library(tidyr)
 library(stringr)
 
-load('PubMed.RData')
-semicolon_cnt<-address_pubmed_df$affiliation %>%
-  str_count(';') %>%
-  max(na.rm=T)
-
-address_gather_pubmed_df<-address_pubmed_df %>%
-  separate(affiliation, paste0('address.',1:semicolon_cnt),
-           sep='; and |; |;', extra = 'merge') %>%
-  gather(address_num, address, starts_with('address.') ) %>%
-  mutate(address = gsub('\\. *.*@.*$|\\.$', '',address)) %>% #deal with extra email
-  filter(!is.na(address))
-
-save(address_gather_pubmed_df, file='address_pubmed.RData')
+load('address_pubmed.RData')
   
 addresses<-address_gather_pubmed_df$address
 address_lat_lng<-list()
@@ -45,14 +33,4 @@ zero_idx<-which(status == 'ZERO_RESULTS')
 
 geocodeIdx(retry_idx)
 
-
-load('omictools_tree.RData')
-
-cid2sid<-function(cid){
-  child.ids<-subset(catalog_tree_df, parent.id == cid)$id
-  if(length(child.ids) == 0){
-    subset(software_tree_df, parent.id == cid)$id
-  }else{
-    unique(unlist(lapply(child.ids, cid2sid)))
-  }
-}
+#save(address_lat_lng, file='address_lat_lng.RData')
