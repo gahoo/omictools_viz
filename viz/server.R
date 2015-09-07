@@ -41,7 +41,7 @@ shinyServer(function(input, output) {
     #leaflet
     pid <- unique(subset(catalog_tree_df,
                          parent.name == input$tree_click$name)$parent.id)
-    message(pid)
+    #message(pid)
     if(length(pid) == 0){
       unique(v$table$id)
     }else{
@@ -51,7 +51,7 @@ shinyServer(function(input, output) {
   
   observe({
     clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid())
-    message(nrow(clicked_lat_lng))
+    #message(nrow(clicked_lat_lng))
     proxy <- leafletProxy("map", data = clicked_lat_lng) %>%
       clearMarkerClusters() %>%
       clearMarkers()
@@ -82,9 +82,9 @@ shinyServer(function(input, output) {
     
     proxy <- leafletProxy("map", data = clicked_soft)
     proxy %>%
-      removeMarker(layerId = 'pin') %>%
+      clearGroup(group = 'pin') %>%
       addMarkers(lat = ~lat, lng = ~lng,
-                 layerId = 'pin', popup = ~name)
+                 group = 'pin', popup = ~name)
   })
   
   output$clickedinfo <- renderText(input$tree_click$name)
