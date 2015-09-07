@@ -66,6 +66,7 @@ shinyServer(function(input, output) {
     stat_levels<-unique(as.character(clicked_lat_lng$color))
     message(stat_levels)
     pal <- colorFactor(rainbow(160), domain = stat_levels)
+    pal <- colorNumeric('YlOrRd', unique(log10(clicked_lat_lng$cited+1)))
     
     if(nrow(clicked_lat_lng) != 0){
       proxy<-proxy %>%
@@ -76,7 +77,7 @@ shinyServer(function(input, output) {
                            clusterOptions = cluster_option,
                            radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                            #opacity = ~sqrt(cited) + 10,
-                           color = ~pal(color),
+                           color = ~pal(log10(cited+1)),
                            popup = ~name,
                            stroke = F)
       }else{
@@ -91,7 +92,7 @@ shinyServer(function(input, output) {
       
       if(input$map_legend){
         proxy<-proxy %>%
-          addLegend("bottomleft", pal = pal, values = ~color,
+          addLegend("bottomleft", pal = pal, values = ~log10(cited+1),
                     title = input$stat,
                     opacity = 1
           )
