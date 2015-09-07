@@ -66,18 +66,18 @@ shinyServer(function(input, output) {
     stat_levels<-unique(as.character(clicked_lat_lng$color))
     message(stat_levels)
     pal <- colorFactor(rainbow(160), domain = stat_levels)
-    pal <- colorNumeric('YlOrRd', unique(log10(clicked_lat_lng$cited+1)))
+    pal_cited <- colorNumeric('YlOrRd', unique(log10(clicked_lat_lng$cited+1)))
     
     if(nrow(clicked_lat_lng) != 0){
       proxy<-proxy %>%
         clearControls()
-      if(input$map_coloring){
+      if(input$map_coloring_cited){
         proxy<-proxy %>%
           addCircleMarkers(~lng, ~lat,
                            clusterOptions = cluster_option,
                            radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                            #opacity = ~sqrt(cited) + 10,
-                           color = ~pal(log10(cited+1)),
+                           color = ~pal_cited(log10(cited+1)),
                            popup = ~name,
                            stroke = F)
       }else{
@@ -86,16 +86,24 @@ shinyServer(function(input, output) {
                            clusterOptions = cluster_option,
                            radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                            #opacity = ~sqrt(cited) + 10,
+                           color = ~pal(color),
                            popup = ~name,
                            stroke = F)
       }
       
       if(input$map_legend){
-        proxy<-proxy %>%
-          addLegend("bottomleft", pal = pal, values = ~log10(cited+1),
-                    title = input$stat,
-                    opacity = 1
-          )
+        if(input$map_coloring_cited){
+          proxy<-proxy %>%
+            addLegend("bottomleft", pal = pal_cited, values = ~log10(cited+1),
+                      title = "log10(cited)",
+                      opacity = 1)
+        }else{
+          proxy<-proxy %>%
+            addLegend("bottomleft", pal = pal, values = ~color,
+                      title = input$stat,
+                      opacity = 1)
+        }
+        
       }
         
     }
