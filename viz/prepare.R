@@ -73,10 +73,10 @@ address_lat_lng_df<-lapply(address_lat_lng, addr_list2df) %>%
   ldply(.id='id') %>%
   merge(address_gather_pubmed_df, by='id') %>%
   select(id, pid, lat, lng, cited) %>%
-  unique %>%
   mutate(cited = ifelse(is.na(cited),0,cited)) %>%
-  merge(software_tree_df[c('id', 'name')], by='id', all.x=T)
+  merge(software_tree_df[c('id', 'name')], by='id', all.x=T) %>%
+  unique
 
-save(address_lat_lng_df, name_links, tree_df, catalog_desc,
+save(omictools, address_lat_lng_df, name_links, tree_df, catalog_desc,
      software_df, catalog_tree_df, software_tree_df,
      file='viz/viz.RData')
