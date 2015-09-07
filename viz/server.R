@@ -26,7 +26,8 @@ shinyServer(function(input, output) {
             width="100%")
   })
   
-  v <- reactiveValues(table = NULL)
+  v <- reactiveValues(table = NULL,
+                      detail =NULL)
   
   observeEvent(input$tree_click, {
     #without catalog id, might not be able to get correct info since same name exists
@@ -74,6 +75,7 @@ shinyServer(function(input, output) {
       if(input$map_coloring_cited){
         proxy<-proxy %>%
           addCircleMarkers(~lng, ~lat,
+                           layerId = ~id,
                            clusterOptions = cluster_option,
                            radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                            #opacity = ~sqrt(cited) + 10,
@@ -83,6 +85,7 @@ shinyServer(function(input, output) {
       }else{
         proxy<-proxy %>%
           addCircleMarkers(~lng, ~lat,
+                           layerId = ~id,
                            clusterOptions = cluster_option,
                            radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                            #opacity = ~sqrt(cited) + 10,
@@ -121,6 +124,7 @@ shinyServer(function(input, output) {
     proxy %>%
       clearGroup(group = 'pin') %>%
       addMarkers(lat = ~lat, lng = ~lng,
+                 layerId = ~id,
                  group = 'pin', popup = ~name)
   })
   
@@ -145,24 +149,43 @@ shinyServer(function(input, output) {
       )
   })
   
-  output$detail <- DT::renderDataTable({
+  observeEvent(input$map_marker_click,{
+    str(input$map_marker_click)
+    sid<-input$map_marker_click$id
+    message(sid)
+    if(is.null(sid)||is.na(sid)||length(sid==0)){
+      v$detail<-NULL
+    }
+    v$detail<-software_df %>%
+      filter(id == sid) %>%
+      melt(id.vars='omictools_link', na.rm=T) %>%
+      select(-omictools_link)
+  })
+  
+  observeEvent(input$catalog_row_last_clicked,{
     clicked_id = v$table[input$catalog_row_last_clicked,]$id
     if(length(clicked_id) == 0 || is.na(clicked_id)){
-      return(NULL)
+      v$detail<-NULL
     }
     if(substr(clicked_id,1,1) == 'c'){
-      detail<-catalog_desc %>%
+      v$detail<-catalog_desc %>%
         filter(id == clicked_id) %>%
         melt(id.vars='id', na.rm=T) %>%
         select(-id)
     }else{
-      detail<-software_df %>%
+      v$detail<-software_df %>%
         filter(id == clicked_id) %>%
         melt(id.vars='omictools_link', na.rm=T) %>%
         select(-omictools_link)
     }
+  })
+  
+  output$detail <- DT::renderDataTable({
+    if(is.null(v$detail)){
+      return(NULL)
+    }
     
-    datatable(detail, selection = 'none', rownames=F,
+    datatable(v$detail, selection = 'none', rownames=F,
               #width = '500px',
               escape = FALSE,
               options = list(paging=F,
