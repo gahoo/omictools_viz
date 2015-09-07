@@ -9,7 +9,12 @@ shinyUI(fluidPage(
   fluidRow(
     column(6,
            d3tree2Output('tree'),
-           leafletOutput('map') ),
+           leafletOutput('map'),
+           selectInput('stat', 'stat',
+                       choices = c('Language', 'License',
+                                   'Type_of_tool', 'Nature_of_tool'),
+                       selected = 'Language'),
+           plotOutput('barplot') ),
     column(6, 
            strong(textOutput("clickedinfo")),
            DT::dataTableOutput('catalog'),

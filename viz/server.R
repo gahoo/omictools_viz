@@ -6,6 +6,7 @@ library(reshape2)
 library(plyr)
 library(dplyr)
 library(leaflet)
+library(ggplot2)
 
 load('viz.RData')
 cid2sid<-function(cid){
@@ -34,19 +35,25 @@ shinyServer(function(input, output) {
       select(-name) %>%
       unique
     
+  })
+  
+  sid <- reactive({
     #leaflet
-    pid <- unique(subset(catalog_tree_df, parent.name == input$tree_click$name)$parent.id)
+    pid <- unique(subset(catalog_tree_df,
+                         parent.name == input$tree_click$name)$parent.id)
+    message(pid)
     if(length(pid) == 0){
-      sid <- unique(v$table$id)
+      unique(v$table$id)
     }else{
-      sid <- unlist(lapply(pid, cid2sid))
+      unlist(lapply(pid, cid2sid))
     }
-    
-    clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid)
-    message(pid,'\t', nrow(clicked_lat_lng))
+  })
+  
+  observe({
+    clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid())
+    message(nrow(clicked_lat_lng))
     proxy <- leafletProxy("map", data = clicked_lat_lng) %>%
       clearMarkers() 
-      
     
     if(nrow(clicked_lat_lng) != 0){
       proxy %>%
@@ -56,7 +63,6 @@ shinyServer(function(input, output) {
                          popup = ~name,
                          stroke = F)
     }
-    
   })
   
   output$clickedinfo <- renderText(input$tree_click$name)
@@ -109,5 +115,26 @@ shinyServer(function(input, output) {
     leaflet() %>%
       setView(lng=0, lat=0, zoom=1) %>%
       addTiles()
+  })
+  
+  output$barplot<-renderPlot({
+    sub_software_df<-software_df %>%
+      filter(id %in% sid()) %>%
+      select(id, Language, License, Type_of_tool, Nature_of_tool)
+  
+    data4plot<-sub_software_df[[input$stat]] %>%
+      as.character %>%
+      strsplit(split=', ') %>%
+      unlist %>%
+      table %>%
+      as.data.frame %>%
+      arrange(Freq) %>%
+      mutate(stats = factor(., .))
+    
+    ggplot(data4plot) +
+      aes_string(x='stats', y='Freq') +
+      geom_bar(stat='identity') +
+      coord_flip() +
+      theme(axis.title.y=element_blank())
   })
 })
