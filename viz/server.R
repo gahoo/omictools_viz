@@ -53,16 +53,38 @@ shinyServer(function(input, output) {
     clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid())
     message(nrow(clicked_lat_lng))
     proxy <- leafletProxy("map", data = clicked_lat_lng) %>%
-      clearMarkers() 
+      clearMarkerClusters() %>%
+      clearMarkers()
+      
+    cluster_option <- NULL
+    if(input$cluster){
+      cluster_option <- markerClusterOptions()
+    }
     
     if(nrow(clicked_lat_lng) != 0){
       proxy %>%
         addCircleMarkers(~lng, ~lat,
-                         radius = ~log2(cited + 1) + 5,
+                         clusterOptions = cluster_option,
+                         radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                          #opacity = ~sqrt(cited) + 10,
                          popup = ~name,
                          stroke = F)
     }
+  })
+  
+  observe({
+    clicked_id = v$table[input$catalog_row_last_clicked,]$id
+    clicked_soft<-subset(address_lat_lng_df, id %in% clicked_id) %>%
+      unique
+    if(length(clicked_soft) == 0){
+      return(NULL)
+    }
+    
+    proxy <- leafletProxy("map", data = clicked_soft)
+    proxy %>%
+      removeMarker(layerId = 'pin') %>%
+      addMarkers(lat = ~lat, lng = ~lng,
+                 layerId = 'pin', popup = ~name)
   })
   
   output$clickedinfo <- renderText(input$tree_click$name)
@@ -120,7 +142,7 @@ shinyServer(function(input, output) {
   output$barplot<-renderPlot({
     sub_software_df<-software_df %>%
       filter(id %in% sid()) %>%
-      select(id, Language, License, Type_of_tool, Nature_of_tool)
+      select(id, Language, License, Interface, Taxonomy, Type_of_tool, Nature_of_tool)
   
     data4plot<-sub_software_df[[input$stat]] %>%
       as.character %>%
