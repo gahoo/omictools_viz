@@ -50,7 +50,9 @@ shinyServer(function(input, output) {
   })
   
   observe({
-    clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid())
+    clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid()) %>%
+      merge(software_df[c('id', input$stat)], by='id') %>%
+      mutate_(color = input$stat)
     #message(nrow(clicked_lat_lng))
     proxy <- leafletProxy("map", data = clicked_lat_lng) %>%
       clearMarkerClusters() %>%
@@ -61,14 +63,24 @@ shinyServer(function(input, output) {
       cluster_option <- markerClusterOptions()
     }
     
+    stat_levels<-unique(as.character(clicked_lat_lng$color))
+    message(stat_levels)
+    pal <- colorFactor(rainbow(160), domain = stat_levels)
+    
     if(nrow(clicked_lat_lng) != 0){
       proxy %>%
         addCircleMarkers(~lng, ~lat,
                          clusterOptions = cluster_option,
                          radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                          #opacity = ~sqrt(cited) + 10,
+                         color = ~pal(color),
                          popup = ~name,
-                         stroke = F)
+                         stroke = F) %>%
+        clearControls() %>%
+        addLegend("bottomleft", pal = pal, values = ~color,
+                  title = input$stat,
+                  opacity = 1
+        )
     }
   })
   
