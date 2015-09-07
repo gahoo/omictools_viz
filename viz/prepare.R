@@ -1,3 +1,6 @@
+library(plyr)
+library(dplyr)
+
 load('omictools.RData')
 load('omictools_tree.RData')
 load('address_lat_lng.RData')
@@ -11,7 +14,7 @@ build_a<-function(x){
 software_df<-software_df %>%
   mutate(id = gsub('^.*-', '', gsub('.html', '', omictools_link)),
          related = gsub(';', '; ', related),
-         catalog = gsub(';', '> ', catalog),
+         catalog = gsub(';', ' > ', catalog),
          img = sprintf("<img src='%s'/>", img),
          link = build_a(link),
          PubMed = build_a(PubMed),
