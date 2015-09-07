@@ -59,7 +59,7 @@ shinyServer(function(input, output) {
       clearMarkers()
       
     cluster_option <- NULL
-    if(input$cluster){
+    if(input$map_cluster){
       cluster_option <- markerClusterOptions()
     }
     
@@ -68,19 +68,35 @@ shinyServer(function(input, output) {
     pal <- colorFactor(rainbow(160), domain = stat_levels)
     
     if(nrow(clicked_lat_lng) != 0){
-      proxy %>%
-        addCircleMarkers(~lng, ~lat,
-                         clusterOptions = cluster_option,
-                         radius = ~5 * sqrt(log10(cited + 1) ) + 5,
-                         #opacity = ~sqrt(cited) + 10,
-                         color = ~pal(color),
-                         popup = ~name,
-                         stroke = F) %>%
-        clearControls() %>%
-        addLegend("bottomleft", pal = pal, values = ~color,
-                  title = input$stat,
-                  opacity = 1
-        )
+      proxy<-proxy %>%
+        clearControls()
+      if(input$map_coloring){
+        proxy<-proxy %>%
+          addCircleMarkers(~lng, ~lat,
+                           clusterOptions = cluster_option,
+                           radius = ~5 * sqrt(log10(cited + 1) ) + 5,
+                           #opacity = ~sqrt(cited) + 10,
+                           color = ~pal(color),
+                           popup = ~name,
+                           stroke = F)
+      }else{
+        proxy<-proxy %>%
+          addCircleMarkers(~lng, ~lat,
+                           clusterOptions = cluster_option,
+                           radius = ~5 * sqrt(log10(cited + 1) ) + 5,
+                           #opacity = ~sqrt(cited) + 10,
+                           popup = ~name,
+                           stroke = F)
+      }
+      
+      if(input$map_legend){
+        proxy<-proxy %>%
+          addLegend("bottomleft", pal = pal, values = ~color,
+                    title = input$stat,
+                    opacity = 1
+          )
+      }
+        
     }
   })
   
