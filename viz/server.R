@@ -89,13 +89,12 @@ shinyServer(function(input, output, session) {
     base_pal<-colorRampPalette(brewer.pal(12,"Set3"))
     
     stat_levels<-unique(clicked_lat_lng$color)
-    pal_factor<-stat_levels %>%
-      length %>%
-      base_pal %>%
+    n_color<-length(stat_levels)
+    n_color<-ifelse(n_color==0, 1, n_color)
+    pal_factor<-base_pal(n_color) %>%
       colorFactor(domain = stat_levels)
     
-    cited_domain <- clicked_lat_lng$cited+1 %>%
-      log10 %>% unique
+    cited_domain <- unique(log10(clicked_lat_lng$cited+1))
     pal_cited <- colorNumeric('YlOrRd', cited_domain)    
     
     if(nrow(clicked_lat_lng) != 0){
@@ -238,8 +237,12 @@ shinyServer(function(input, output, session) {
   })
   
   output$barplot<-renderPlot({
+    sids<-sid()
+    if(input$catalog_bound_map){
+      sids<-intersect(bound_sid(), sids)
+    }
     sub_software_df<-software_df %>%
-      filter(id %in% sid()) %>%
+      filter(id %in% sids) %>%
       select(id, Language, License, Interface, Taxonomy,
              Input, Output, Operating_system,
              Type_of_tool, Nature_of_tool)
