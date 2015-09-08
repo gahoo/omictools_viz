@@ -7,6 +7,7 @@ library(plyr)
 library(dplyr)
 library(leaflet)
 library(ggplot2)
+library(RColorBrewer)
 
 load('viz.RData')
 cid2sid<-function(cid){
@@ -18,7 +19,7 @@ cid2sid<-function(cid){
   }
 }
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
   output$tree <- renderD3tree2({
     d3tree2(toJSON(omictools, auto_unbox = T),
@@ -38,6 +39,23 @@ shinyServer(function(input, output) {
     
   })
   
+  observeEvent(input$catalog_bound_map & input$map_fit_bound,{
+    if(input$catalog_bound_map & input$map_fit_bound == TRUE){
+      updateCheckboxInput(session, 'map_fit_bound', label = 'Fit Bound', value = F)
+      updateCheckboxInput(session, 'catalog_bound_map', label = 'Bound map', value = F)
+    }
+  })
+  
+  
+  bound_id<-reactive({
+    bound_lat_lng <- address_lat_lng_df %>%
+      filter(lng < input$map_bounds$east &
+             lng > input$map_bounds$west &
+             lat < input$map_bounds$north &
+             lat > input$map_bounds$south)
+    bound_lat_lng$id
+  })
+  
   sid <- reactive({
     #leaflet
     pid <- unique(subset(catalog_tree_df,
@@ -53,7 +71,9 @@ shinyServer(function(input, output) {
   observe({
     clicked_lat_lng <- subset(address_lat_lng_df, id %in% sid()) %>%
       merge(software_df[c('id', input$stat)], by='id') %>%
-      mutate_(color = input$stat)
+      mutate_(color = input$stat) %>%
+      mutate(color = as.character(color))
+    
     #message(nrow(clicked_lat_lng))
     proxy <- leafletProxy("map", data = clicked_lat_lng) %>%
       clearMarkerClusters() %>%
@@ -64,10 +84,18 @@ shinyServer(function(input, output) {
       cluster_option <- markerClusterOptions()
     }
     
-    stat_levels<-unique(as.character(clicked_lat_lng$color))
-    message(stat_levels)
-    pal <- colorFactor(rainbow(160), domain = stat_levels)
-    pal_cited <- colorNumeric('YlOrRd', unique(log10(clicked_lat_lng$cited+1)))
+    #color pal
+    base_pal<-colorRampPalette(brewer.pal(12,"Set3"))
+    
+    stat_levels<-unique(clicked_lat_lng$color)
+    pal<-stat_levels %>%
+      length %>%
+      base_pal %>%
+      colorFactor(domain = stat_levels)
+    
+    cited_domain <- clicked_lat_lng$cited+1 %>%
+      log10 %>% unique
+    pal_cited <- colorNumeric('YlOrRd', cited_domain)
     
     if(nrow(clicked_lat_lng) != 0){
       proxy<-proxy %>%
@@ -115,17 +143,23 @@ shinyServer(function(input, output) {
   observe({
     clicked_id = v$table[input$catalog_row_last_clicked,]$id
     clicked_soft<-subset(address_lat_lng_df, id %in% clicked_id) %>%
-      unique
+      unique %>%
+      filter(!is.na(lat) & !is.na(lng))
     if(length(clicked_soft) == 0){
       return(NULL)
     }
     
     proxy <- leafletProxy("map", data = clicked_soft)
-    proxy %>%
+    proxy<-proxy %>%
       clearGroup(group = 'pin') %>%
       addMarkers(lat = ~lat, lng = ~lng,
                  layerId = ~id,
                  group = 'pin', popup = ~name)
+    if(input$map_fit_bound){
+      proxy %>%
+        fitBounds(~min(lng), ~min(lat), ~max(lng), ~max(lat))
+    }
+      
   })
   
   output$clickedinfo <- renderText(input$tree_click$name)
@@ -134,12 +168,19 @@ shinyServer(function(input, output) {
       return(NULL)
     }
     
-    merge(name_links, v$table, by='id', all.y=T) %>%
-    datatable(selection = 'single', rownames=T, escape = FALSE,
-              options=list(paging=F,
-                           scrollY="280px",
-                           scrollCollapse=F)
-              ) %>%
+    catalog_tbl<-merge(name_links, v$table, by='id', all.y=T)
+      
+    if(input$catalog_bound_map){
+      catalog_tbl<-catalog_tbl %>%
+        filter(id %in% bound_id() | grepl('^c', id))
+    }
+    
+    catalog_tbl %>%
+      datatable(selection = 'single', rownames=T, escape = FALSE,
+                options=list(paging=F,
+                             scrollY="280px",
+                             scrollCollapse=F)
+                ) %>%
       formatStyle(
         'size',
         background = styleColorBar(v$table$size, 'steelblue'),
@@ -202,7 +243,9 @@ shinyServer(function(input, output) {
   output$barplot<-renderPlot({
     sub_software_df<-software_df %>%
       filter(id %in% sid()) %>%
-      select(id, Language, License, Interface, Taxonomy, Type_of_tool, Nature_of_tool)
+      select(id, Language, License, Interface, Taxonomy,
+             Input, Output, Operating_system,
+             Type_of_tool, Nature_of_tool)
   
     data4plot<-sub_software_df[[input$stat]] %>%
       as.character %>%
