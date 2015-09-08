@@ -31,7 +31,7 @@ collapsibleDiv<-function(
 
 shinyUI(fluidPage(
   titlePanel('Omictools.com Visualization'),
-  collapsibleDiv(id='info', collapse = T,
+  collapsibleDiv(id='info', collapse = F,
                  button.text = 'Show/Hide Information',
                  "test info"),
 
