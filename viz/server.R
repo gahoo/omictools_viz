@@ -140,7 +140,7 @@ shinyServer(function(input, output, session) {
     clicked_soft<-subset(address_lat_lng_df, id %in% clicked_id) %>%
       unique %>%
       filter(!is.na(lat) & !is.na(lng))
-    if(length(clicked_soft) == 0){
+    if(nrow(clicked_soft) == 0){
       return(NULL)
     }
     
