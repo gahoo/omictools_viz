@@ -40,6 +40,7 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$catalog_bound_map & input$map_fit_bound,{
+    #make sure catalog_bound_map & map_fit_bound not TRUE at the same time
     if(input$catalog_bound_map & input$map_fit_bound == TRUE){
       updateCheckboxInput(session, 'map_fit_bound', label = 'Fit Bound', value = F)
       updateCheckboxInput(session, 'catalog_bound_map', label = 'Bound map', value = F)
@@ -47,7 +48,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  bound_id<-reactive({
+  bound_sid<-reactive({
     bound_lat_lng <- address_lat_lng_df %>%
       filter(lng < input$map_bounds$east &
              lng > input$map_bounds$west &
@@ -88,7 +89,7 @@ shinyServer(function(input, output, session) {
     base_pal<-colorRampPalette(brewer.pal(12,"Set3"))
     
     stat_levels<-unique(clicked_lat_lng$color)
-    pal<-stat_levels %>%
+    pal_factor<-stat_levels %>%
       length %>%
       base_pal %>%
       colorFactor(domain = stat_levels)
@@ -98,42 +99,37 @@ shinyServer(function(input, output, session) {
     pal_cited <- colorNumeric('YlOrRd', cited_domain)
     
     if(nrow(clicked_lat_lng) != 0){
-      proxy<-proxy %>%
-        clearControls()
       if(input$map_coloring_cited){
-        proxy<-proxy %>%
-          addCircleMarkers(~lng, ~lat,
-                           layerId = ~id,
-                           clusterOptions = cluster_option,
-                           radius = ~5 * sqrt(log10(cited + 1) ) + 5,
-                           #opacity = ~sqrt(cited) + 10,
-                           color = ~pal_cited(log10(cited+1)),
-                           popup = ~name,
-                           stroke = F)
+        color_formula <- formula("~pal_cited(log10(cited+1))")
       }else{
-        proxy<-proxy %>%
-          addCircleMarkers(~lng, ~lat,
-                           layerId = ~id,
-                           clusterOptions = cluster_option,
-                           radius = ~5 * sqrt(log10(cited + 1) ) + 5,
-                           #opacity = ~sqrt(cited) + 10,
-                           color = ~pal(color),
-                           popup = ~name,
-                           stroke = F)
+        color_formula <- formula("~pal_factor(color)")
       }
+      
+      proxy<-proxy %>%
+        addCircleMarkers(~lng, ~lat,
+                         layerId = ~id,
+                         clusterOptions = cluster_option,
+                         radius = ~5 * sqrt(log10(cited + 1) ) + 5,
+                         #opacity = ~sqrt(cited) + 10,
+                         color = color_formula,
+                         popup = ~name,
+                         stroke = F)
       
       if(input$map_legend){
         if(input$map_coloring_cited){
-          proxy<-proxy %>%
-            addLegend("bottomleft", pal = pal_cited, values = ~log10(cited+1),
-                      title = "log10(cited)",
-                      opacity = 1)
+          pal_func <- pal_cited
+          values <- formula("~log10(cited+1)")
+          title <- "log10(cited)"
         }else{
-          proxy<-proxy %>%
-            addLegend("bottomleft", pal = pal, values = ~color,
-                      title = input$stat,
-                      opacity = 1)
+          pal_func <- pal_factor
+          values <- formula("~color")
+          title <- input$stat
         }
+        proxy<-proxy %>%
+          clearControls() %>%
+          addLegend("bottomleft", pal = pal_func, values = values,
+                    title = title,
+                    opacity = 1)
         
       }
         
@@ -155,6 +151,7 @@ shinyServer(function(input, output, session) {
       addMarkers(lat = ~lat, lng = ~lng,
                  layerId = ~id,
                  group = 'pin', popup = ~name)
+    
     if(input$map_fit_bound){
       proxy %>%
         fitBounds(~min(lng), ~min(lat), ~max(lng), ~max(lat))
@@ -172,7 +169,7 @@ shinyServer(function(input, output, session) {
       
     if(input$catalog_bound_map){
       catalog_tbl<-catalog_tbl %>%
-        filter(id %in% bound_id() | grepl('^c', id))
+        filter(id %in% bound_sid() | grepl('^c', id))
     }
     
     catalog_tbl %>%
