@@ -42,8 +42,8 @@ shinyServer(function(input, output, session) {
   observeEvent(input$catalog_bound_map & input$map_fit_bound,{
     #make sure catalog_bound_map & map_fit_bound not TRUE at the same time
     if(input$catalog_bound_map & input$map_fit_bound == TRUE){
-      updateCheckboxInput(session, 'map_fit_bound', label = 'Fit Bound', value = F)
-      updateCheckboxInput(session, 'catalog_bound_map', label = 'Bound map', value = F)
+      updateCheckboxInput(session, 'map_fit_bound', label = 'Fit Bound (Map follow table)', value = F)
+      updateCheckboxInput(session, 'catalog_bound_map', label = 'Bound map (Table follow map)', value = F)
     }
   })
   
@@ -96,7 +96,7 @@ shinyServer(function(input, output, session) {
     
     cited_domain <- clicked_lat_lng$cited+1 %>%
       log10 %>% unique
-    pal_cited <- colorNumeric('YlOrRd', cited_domain)
+    pal_cited <- colorNumeric('YlOrRd', cited_domain)    
     
     if(nrow(clicked_lat_lng) != 0){
       if(input$map_coloring_cited){
