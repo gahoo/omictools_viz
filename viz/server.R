@@ -246,7 +246,10 @@ shinyServer(function(input, output, session) {
       select(id, Language, License, Interface, Taxonomy,
              Input, Output, Operating_system,
              Type_of_tool, Nature_of_tool)
-  
+    if(nrow(sub_software_df)==0){
+      return(NULL)
+    }
+    
     data4plot<-sub_software_df[[input$stat]] %>%
       as.character %>%
       strsplit(split=', ') %>%
