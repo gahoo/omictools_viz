@@ -30,8 +30,6 @@ shinyUI(fluidPage(
                  "test info"),
   fluidRow(
     column(6,
-           d3tree2Output('tree'),
-           leafletOutput('map'),
            collapsibleDiv(
              id='customize', collapse = T,
              label = 'Customize',
@@ -50,10 +48,23 @@ shinyUI(fluidPage(
                                      'Type_of_tool', 'Nature_of_tool'),
                          selected = 'Type_of_tool')
            ),
-           plotOutput('barplot') ),
+           collapsibleDiv(
+             id='d3tree', label = 'd3tree', class = 'btn-xs',
+             d3tree2Output('tree')
+             ),
+           collapsibleDiv(
+             id='maps', label='maps', class = 'btn-xs',
+             leafletOutput('map')
+             ),
+           collapsibleDiv(
+             id='ggplot', label='barplot', class = 'btn-xs',
+             plotOutput('barplot')
+             )
+           ),
     column(6, 
            strong(textOutput("clickedinfo")),
            DT::dataTableOutput('catalog'),
-           DT::dataTableOutput('detail', width="100%"))
+           DT::dataTableOutput('detail', width="100%")
+           )
   )
 ))
