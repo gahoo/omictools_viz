@@ -33,9 +33,15 @@ shinyServer(function(input, output, session) {
   observeEvent(input$tree_click, {
     #without catalog id, might not be able to get correct info since same name exists
     v$table <- subset(tree_df, parent.name == input$tree_click$name) %>%
-      merge(software_df[c('id', 'Type_of_tool')], by='id', all.x=T) %>%
       select(-name) %>%
       unique
+    
+    if(length(grep('^s', v$table$id)) >0){
+      v$table <- v$table %>%
+        merge(address_lat_lng_df[c('id', 'cited')], by='id', all.x=T) %>%
+        merge(software_df[c('id', 'Type_of_tool')], by='id', all.x=T) %>%
+        unique
+    }
     
   })
   
@@ -174,6 +180,7 @@ shinyServer(function(input, output, session) {
     catalog_tbl %>%
       datatable(selection = 'single', rownames=T, escape = FALSE,
                 options=list(paging=F,
+                             scrollX=T,
                              scrollY="280px",
                              scrollCollapse=F)
                 ) %>%
