@@ -3,25 +3,19 @@ library(d3treeR)
 library(DT)
 library(leaflet)
 
-collapsibleDiv<-function(
-  id, ..., collapse = FALSE,
-                         button.text='Show/Hide',
-                         button.class='btn-info btn-xs',
-                         glyphicon='glyphicon-info-sign'){
-  if(!is.null(glyphicon)){
-    icon_html<-sprintf("<span class='glyphicon %s' aria-hidden='true'></span>", glyphicon)
-  }else{
-    icon_html<-""
-  }
+collapsibleDiv<-function(id, ...,
+                         button.label='Show/Hide',
+                         collapse = FALSE, button.class='btn-info btn-xs',
+                         button.icon=NULL, button.width=NULL){
   
   collapse<-ifelse(collapse, "on", "in")
   
   list(
-    HTML(sprintf("<button type='button' class='btn %s'", button.class),
-         sprintf("data-toggle='collapse' data-target='#%s'>", id),
-         icon_html,
-         sprintf(" %s", button.text),
-         "</button>"),
+    actionButton(
+      sprintf("b_%s",id), label=button.label, icon=button.icon,
+      class=button.class, width=button.width, "data-toggle"='collapse',
+      "data-target"=sprintf('#%s',id) 
+      ),
     div(id = sprintf("%s", id),
         class = sprintf("collapse %s", collapse),
         ...
@@ -32,18 +26,19 @@ collapsibleDiv<-function(
 shinyUI(fluidPage(
   titlePanel('Omictools.com Visualization'),
   collapsibleDiv(id='info', collapse = F,
-                 button.text = 'Show/Hide Information',
+                 button.label = 'Show/Hide Information',
+                 button.icon = icon('info-sign',lib='glyphicon'),
+                 #button.width = "100%",
                  "test info"),
-
   fluidRow(
     column(6,
            d3tree2Output('tree'),
            leafletOutput('map'),
            collapsibleDiv(
              id='customize', collapse = T,
-             button.text = 'Customize',
+             button.label = 'Customize',
              button.class = 'btn-info btn-xs pull-right',
-             glyphicon = 'glyphicon-th-list',
+             button.icon = icon('th-list', lib='glyphicon'),
              
              checkboxInput('map_cluster', 'Clustering', value=F),
              checkboxInput('map_coloring_cited', 'Coloring by cited', value=F),
