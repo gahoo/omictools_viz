@@ -38,8 +38,8 @@ shinyServer(function(input, output, session) {
     
     if(length(grep('^s', v$table$id)) >0){
       v$table <- v$table %>%
-        merge(address_lat_lng_df[c('id', 'cited')], by='id', all.x=T) %>%
-        merge(software_df[c('id', 'Type_of_tool')], by='id', all.x=T) %>%
+        left_join(address_lat_lng_df[c('id', 'cited')], by='id') %>%
+        left_join(software_df[c('id', 'Type_of_tool')], by='id') %>%
         unique
     }
     
@@ -142,7 +142,7 @@ shinyServer(function(input, output, session) {
   })
   
   observe({
-    clicked_id = v$table[input$catalog_row_last_clicked,]$id
+    clicked_id = v$table[as.numeric(input$catalog_row_last_clicked),]$id
     clicked_soft<-subset(address_lat_lng_df, id %in% clicked_id) %>%
       unique %>%
       filter(!is.na(lat) & !is.na(lng))
@@ -170,7 +170,7 @@ shinyServer(function(input, output, session) {
       return(NULL)
     }
     
-    catalog_tbl<-merge(name_links, v$table, by='id', all.y=T)
+    catalog_tbl<-right_join(name_links, v$table, by='id')
       
     if(input$catalog_bound_map){
       catalog_tbl<-catalog_tbl %>%
@@ -207,7 +207,9 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$catalog_row_last_clicked,{
-    clicked_id = v$table[input$catalog_row_last_clicked,]$id
+    clicked_id = v$table[as.numeric(input$catalog_row_last_clicked),]$id
+    #message(as.numeric(input$catalog_row_last_clicked), clicked_id)
+    #str(v$table[as.numeric(input$catalog_row_last_clicked),])
     if(length(clicked_id) == 0 || is.na(clicked_id)){
       v$detail<-NULL
     }
