@@ -154,7 +154,6 @@ shinyServer(function(input, output, session) {
     proxy<-proxy %>%
       clearGroup(group = 'pin') %>%
       addMarkers(lat = ~lat, lng = ~lng,
-                 layerId = ~id,
                  group = 'pin', popup = ~name)
     
     if(input$map_fit_bound){
