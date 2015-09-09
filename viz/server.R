@@ -65,7 +65,7 @@ shinyServer(function(input, output, session) {
   
   sid <- reactive({
     #leaflet
-    pid <- unique(subset(catalog_tree_df,
+    pid <- unique(subset(tree_df,
                          parent.name == input$tree_click$name)$parent.id)
     #message(pid)
     if(length(pid) == 0){
