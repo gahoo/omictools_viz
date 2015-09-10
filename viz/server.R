@@ -116,6 +116,7 @@ shinyServer(function(input, output, session) {
                          clusterOptions = cluster_option,
                          radius = ~5 * sqrt(log10(cited + 1) ) + 5,
                          #opacity = ~sqrt(cited) + 10,
+                         fillOpacity = 0.4,
                          color = color_formula,
                          popup = ~name,
                          stroke = F)
@@ -177,7 +178,7 @@ shinyServer(function(input, output, session) {
         filter(id %in% bound_sid() | grepl('^c', id))
     }
     
-    catalog_tbl %>%
+    catalog_tbl<-catalog_tbl %>%
       datatable(selection = 'single', rownames=T, escape = FALSE,
                 options=list(paging=F,
                              scrollX=T,
@@ -186,11 +187,24 @@ shinyServer(function(input, output, session) {
                 ) %>%
       formatStyle(
         'size',
-        background = styleColorBar(v$table$size, 'steelblue'),
+        background = styleColorBar(v$table$size, 'LightSkyBlue'),
         backgroundSize = '100% 90%',
         backgroundRepeat = 'no-repeat',
         backgroundPosition = 'center'
       )
+      
+    if('cited' %in% names(v$table)){
+      catalog_tbl <- catalog_tbl %>%
+        formatStyle(
+          'cited',
+          background = styleColorBar(v$table$cited, 'LightSalmon'),
+          backgroundSize = '100% 90%',
+          backgroundRepeat = 'no-repeat',
+          backgroundPosition = 'center'
+        )
+    }
+    
+    catalog_tbl
   })
   
   observeEvent(input$map_marker_click,{
@@ -232,6 +246,7 @@ shinyServer(function(input, output, session) {
     }
     
     datatable(v$detail, selection = 'none', rownames=F,
+              colnames=c('',' '),
               #width = '500px',
               escape = FALSE,
               options = list(paging=F,
