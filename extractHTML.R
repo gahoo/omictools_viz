@@ -37,7 +37,7 @@ extractCatalogHtmlInfo<-function(html_file, xpaths=NULL, ...){
   if(is.null(xpaths)){
     if(length(grep("categories-nav", html))!=0){
       xpaths=catalog_folder_xpaths
-    }else{
+    }else{ #category-site-details
       xpaths=catalog_software_xpaths
     }
   }
