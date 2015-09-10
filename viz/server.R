@@ -154,6 +154,7 @@ shinyServer(function(input, output, session) {
     proxy<-proxy %>%
       clearGroup(group = 'pin') %>%
       addMarkers(lat = ~lat, lng = ~lng,
+                 layerId = ~paste0('pin_',id),
                  group = 'pin', popup = ~name)
     
     if(input$map_fit_bound){
@@ -194,7 +195,7 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$map_marker_click,{
     str(input$map_marker_click)
-    sid<-input$map_marker_click$id
+    sid<-gsub('^pin_','',input$map_marker_click$id)
     message(sid)
     if(is.null(sid)||is.na(sid)||length(sid==0)){
       v$detail<-NULL
