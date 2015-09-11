@@ -82,7 +82,7 @@ catalog_folder_xpaths<-list(
 
 catalog_software_xpaths<-list(
   parent_desc=list(
-    xpath="//div[@class='main-item box'][not(ul)]"),
+    xpath="//div[@class='main-item box'][not(ul)][last()]"),
   parent_alias=list(
     xpath="id('main')/div[@class='header1 navbar']/h1"),
   parent=list(
@@ -121,18 +121,18 @@ print(other_files)
 #test_file<-'omictools.com/-13-c-based-metabolic-flux-analysis-s7233.html'
 #test<-extractSoftHtmlInfo(test_file, software_xpaths)
 
-extractInfo<-function(htmlfiles, fun, xpaths=NULL){
-  info<-htmlfiles %>%
+applyHtml<-function(htmlfiles, fun, ...){
+  htmls<-htmlfiles %>%
     sprintf(fmt="omictools.com/%s") %>%
-    llply(fun, xpaths=xpaths,
+    llply(fun, ...,
           .progress=progress_text(char='.'))
   
-  names(info)<-htmlfiles
-  info
+  names(htmls)<-htmlfiles
+  htmls
 }
 
 checkCatalogUnDownloadLink<-function(htmlfiles, checklink_xpaths){  
-  un_down<-extractInfo(htmlfiles, extractCatalogHtmlInfo, checklink_xpaths) %>%
+  un_down<-applyHtml(htmlfiles, extractCatalogHtmlInfo, checklink_xpaths) %>%
     unlist
   
   idx<-grep('omictools.com', un_down)
@@ -142,8 +142,8 @@ checkCatalogUnDownloadLink<-function(htmlfiles, checklink_xpaths){
 un_down<-checkCatalogUnDownloadLink(catalog_html_files, checklink_xpaths)
 print(un_down)
 
-software<-extractInfo(software_html_files[1:1000], extractSoftHtmlInfo, software_xpaths)
-catalog<-extractInfo(catalog_html_files, extractCatalogHtmlInfo)
+software<-applyHtml(software_html_files[1:1000], extractSoftHtmlInfo, software_xpaths)
+catalog<-applyHtml(catalog_html_files, extractCatalogHtmlInfo)
 
 software_df<-software %>%
   lapply(function(x){lapply(x, paste0, collapse = ';')}) %>%
@@ -175,3 +175,71 @@ catalog_software_df<-catalog_df %>%
   select(-count)
 
 save(software, software_df, catalog, catalog_software, catalog_folder, catalog_software_df, catalog_folder_df, file='omictools.RData')
+############### patch
+load('omictools.RData')
+getCatalogType<-function(html_file){
+  html<-readLines(html_file, warn = F)
+  types<-c()
+  
+  if(length(grep("categories-nav", html))!=0){
+    types<-c(types, "categories-nav")
+  }
+  if(length(grep("category-site-details", html))!=0){
+    types<-c(types, "category-site-details")
+  }
+  data.frame(type=types)
+}
+
+missing_catalog_software<-catalog_html_files %>%
+  applyHtml(getCatalogType) %>%
+  ldply(.id='htmlfile')%>%
+  filter(duplicated(htmlfile)) %>%
+  select(htmlfile) %>%
+  mutate(htmlfile = as.character(htmlfile)) %>%
+  unlist %>%
+  applyHtml(extractCatalogHtmlInfo,
+            xpaths = catalog_software_xpaths)
+
+missing_catalog_software_df<-missing_catalog_software %>%
+  lapply(as.data.frame) %>%
+  ldply(.id='parent_href') %>%
+  mutate(parent = gsub(' $', '', gsub('^ ', '', parent)) )
+
+####### do the right thing from beginning
+contentFilter<-function(filename, pattern){
+  content<-readLines(filename, warn = F)
+  if(length(grep(pattern, content))!=0){
+    TRUE
+  }else{
+    FALSE
+  }
+}
+
+catalog_folder_idx<-catalog_html_files %>%
+  applyHtml(contentFilter, pattern="categories-nav") %>%
+  unlist
+catalog_software_idx<-catalog_html_files %>%
+  applyHtml(contentFilter, pattern="category-site-details") %>%
+  unlist
+
+catalog_folder<-catalog_html_files[catalog_folder_idx] %>%
+  applyHtml(extractCatalogHtmlInfo, xpaths = catalog_folder_xpaths)
+catalog_software<-catalog_html_files[catalog_software_idx] %>%
+  applyHtml(extractCatalogHtmlInfo, xpaths = catalog_software_xpaths)
+
+list2df<-function(list2trans){
+  list2trans %>%
+    lapply(as.data.frame) %>%
+    ldply(.id='parent_href') %>%
+    mutate(parent = gsub(' $', '', gsub('^ ', '', parent)) )  
+}
+
+lsapply<-function(x){sapply(x,length)}
+
+catalog_folder_df<-catalog_folder %>%
+  list2df %>%
+  mutate(count = as.numeric(gsub('[()]', '', as.character(count))) )
+
+catalog_software_df<-catalog_software %>%
+  list2df %>%
+  mutate(type = gsub("^Details :.*$", "", type))
