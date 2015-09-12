@@ -190,6 +190,14 @@ getCatalogType<-function(html_file){
   data.frame(type=types)
 }
 
+fix_err_desc<-function(df){
+  df %>%
+    mutate(parent_desc = as.character(parent_desc),
+           err_desc_idx = grepl('^\n\n', parent_desc),
+           parent_desc = ifelse(err_desc_idx, NA, parent_desc),
+           err_desc_idx = NULL)
+}
+
 missing_catalog_software<-catalog_html_files %>%
   applyHtml(getCatalogType) %>%
   ldply(.id='htmlfile')%>%
@@ -203,7 +211,8 @@ missing_catalog_software<-catalog_html_files %>%
 missing_catalog_software_df<-missing_catalog_software %>%
   lapply(as.data.frame) %>%
   ldply(.id='parent_href') %>%
-  mutate(parent = gsub(' $', '', gsub('^ ', '', parent)) )
+  mutate(parent = gsub(' $', '', gsub('^ ', '', parent)) ) %>%
+  fix_err_desc
 
 ####### do the right thing from beginning
 contentFilter<-function(filename, pattern){
@@ -242,4 +251,5 @@ catalog_folder_df<-catalog_folder %>%
 
 catalog_software_df<-catalog_software %>%
   list2df %>%
-  mutate(type = gsub("^Details :.*$", "", type))
+  mutate(type = gsub("^Details :.*$", "", type) ) %>%
+  fix_err_desc
