@@ -64,6 +64,8 @@ software_xpaths<-list(
 catalog_folder_xpaths<-list(
   parent_alias=list(
     xpath="id('main')/div[@class='header1 navbar']/h1"),
+  parent_desc=list(
+    xpath="//div[@class='main-item box'][not(ul)][last()]"),
   parent=list(
     xpath="id('main')/div[@class='breadcrumb']/a[last()]"),
   name=list(
