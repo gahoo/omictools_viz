@@ -21,7 +21,8 @@ software_df<-software_df %>%
          URL = build_a(URL)
   )
 
-catalog_desc<-catalog_software_df %>%
+catalog_desc<-rbind.fill(catalog_folder_df,
+                         catalog_software_df) %>%
   mutate( id = gsub('^.*-', '', gsub('-p1.html', '', parent_href)) ) %>%
   select(id,
          alias = parent_alias,
