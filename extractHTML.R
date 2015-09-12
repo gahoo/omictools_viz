@@ -249,7 +249,8 @@ lsapply<-function(x){sapply(x,length)}
 
 catalog_folder_df<-catalog_folder %>%
   list2df %>%
-  mutate(count = as.numeric(gsub('[()]', '', as.character(count))) )
+  mutate(count = as.numeric(gsub('[()]', '', as.character(count))) ) %>%
+  fix_err_desc
 
 catalog_software_df<-catalog_software %>%
   list2df %>%
