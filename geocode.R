@@ -26,6 +26,14 @@ status<-sapply(address_lat_lng, function(x){unlist(x['status'])})
 retry_idx<-which(status == 'OVER_QUERY_LIMIT' |is.na(status))
 zero_idx<-which(status == 'ZERO_RESULTS')
 
-geocodeIdx(retry_idx)
+#geocodeIdx(retry_idx)
 
 #save(address_lat_lng, file='address_lat_lng.RData')
+
+addresses[zero_idx]<-addresses[zero_idx] %>%
+  gsub(' &amp| &quot', '') %>%
+  gsub('\\(.*?\\)', '') %>%
+  gsub('\\. Tel.*', '')
+
+geocodeIdx(zero_idx)
+save(address_lat_lng, file='address_lat_lng.RData')
