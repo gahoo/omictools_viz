@@ -37,11 +37,12 @@ shinyUI(fluidPage(
              icon = icon('th-list', lib='glyphicon'),
              
              checkboxInput('map_cluster', 'Clustering', value=F),
+             checkboxInput('map_coloring_cited', 'Coloring by cited', value=F),
              checkboxInput('map_legend', 'Legend', value=T),
              checkboxInput('map_fit_bound', 'Fit Bound (Map follow table)', value=F),
              checkboxInput('catalog_bound_map', 'Bound map (Table follow map)', value=F),
              selectInput('stat', 'stat',
-                         choices = c('cited', 'Language', 'License',
+                         choices = c('Language', 'License',
                                      'Interface', 'Taxonomy',
                                      'Input', 'Output', 'Operating_system',
                                      'Type_of_tool', 'Nature_of_tool'),
