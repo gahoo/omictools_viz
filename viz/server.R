@@ -38,8 +38,7 @@ shinyServer(function(input, output, session) {
     
     if(length(grep('^s', v$table$id)) >0){
       v$table <- v$table %>%
-        left_join(address_lat_lng_df[c('id', 'cited')], by='id') %>%
-        left_join(software_df[c('id', 'Type_of_tool')], by='id') %>%
+        left_join(software_df[c('id', 'cited', 'Type_of_tool')], by='id') %>%
         unique
     }
     
