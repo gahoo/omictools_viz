@@ -38,8 +38,7 @@ shinyServer(function(input, output, session) {
     
     if(length(grep('^s', v$table$id)) >0){
       v$table <- v$table %>%
-        left_join(address_lat_lng_df[c('id', 'cited')], by='id') %>%
-        left_join(software_df[c('id', 'Type_of_tool')], by='id') %>%
+        left_join(software_df[c('id', 'cited', 'Type_of_tool')], by='id') %>%
         unique
     }
     
@@ -104,7 +103,7 @@ shinyServer(function(input, output, session) {
     pal_cited <- colorNumeric('YlOrRd', cited_domain)    
     
     if(nrow(clicked_lat_lng) != 0){
-      if(input$map_coloring_cited){
+      if(input$stat == 'cited'){
         color_formula <- formula("~pal_cited(log10(cited+1))")
       }else{
         color_formula <- formula("~pal_factor(color)")
@@ -122,7 +121,7 @@ shinyServer(function(input, output, session) {
                          stroke = F)
       
       if(input$map_legend){
-        if(input$map_coloring_cited){
+        if(input$stat == 'cited'){
           pal_func <- pal_cited
           values <- formula("~log10(cited+1)")
           title <- "log10(cited)"
@@ -270,7 +269,7 @@ shinyServer(function(input, output, session) {
       select(id, Language, License, Interface, Taxonomy,
              Input, Output, Operating_system,
              Type_of_tool, Nature_of_tool)
-    if(nrow(sub_software_df)==0){
+    if(nrow(sub_software_df)==0||input$stat=='cited'){
       return(NULL)
     }
     
