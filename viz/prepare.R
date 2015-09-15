@@ -78,6 +78,8 @@ address_lat_lng_df<-lapply(address_lat_lng, addr_list2df) %>%
   merge(software_tree_df[c('id', 'name')], by='id', all.x=T) %>%
   unique
 
+id_cited<-address_gather_pubmed_df[c('id', 'cited')] %>% unique
+
 save(omictools, address_lat_lng_df, name_links, tree_df, catalog_desc,
-     software_df, catalog_tree_df, software_tree_df,
+     software_df, catalog_tree_df, software_tree_df, id_cited,
      file='viz/viz.RData')
