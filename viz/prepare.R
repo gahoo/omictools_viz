@@ -19,10 +19,7 @@ software_df<-software_df %>%
          link = build_a(link),
          PubMed = build_a(PubMed),
          URL = build_a(URL)
-  ) %>%
-  left_join(
-    address_gather_pubmed_df[c('id', 'cited')]
-    %>% unique, by='id')
+  )
 
 catalog_desc<-rbind.fill(catalog_folder_df,
                          catalog_software_df) %>%
@@ -81,8 +78,8 @@ address_lat_lng_df<-lapply(address_lat_lng, addr_list2df) %>%
   merge(software_tree_df[c('id', 'name')], by='id', all.x=T) %>%
   unique
 
-
+id_cited<-address_gather_pubmed_df[c('id', 'cited')] %>% unique
 
 save(omictools, address_lat_lng_df, name_links, tree_df, catalog_desc,
-     software_df, catalog_tree_df, software_tree_df,
+     software_df, catalog_tree_df, software_tree_df, id_cited,
      file='viz/viz.RData')
