@@ -1,0 +1,22 @@
+---
+title: "About"
+author: "lijiaping"
+date: "Tuesday, September 15, 2015"
+output: html_document
+---
+
+Thanks to the brilliant work of [omictools.com](http://omictools.com), we got a constantly updating directory which contains huge amout of latest tools/papers/databases helping us get our omic analysis done.
+
+Thanks to [timelyportfolio](https://twitter.com/timelyportfolio), I was able to visualize the directory using [`d3treeR`](http://www.buildingwidgets.com/blog/2015/7/22/week-29-d3treer-v2). One tiny flaw is that, I don't know how to return **id** instead of **name**, which makes it difficult to distinguish catalogs with same name.
+
+`RISmed` was employed to retrieve PubMed information, including citation counts and addresses. After scrubbing addresses, `ggmap` was employed to geocode. It's time consuming, and 1791 addresses remained fail. I decided to leave it there, because data scrubbing is a real pain. So, those fail to geocode will not show in the map. [`Leaflet`](https://rstudio.github.io/leaflet/) was employ to build the interactvie map. The compelte codes for data processing procedure could be found on GitHub <https://github.com/gahoo/omictools_viz/>
+
+Note, Data extraction procedure might have induced some errors. No guarantee for correctness.
+
+_What's Next?_
+
+Maybe visualizing co-author, cooperations between universities or companies as network.
+
+[OMICtools: an informative directory for multi-omic data analysis](http://database.oxfordjournals.org/content/2014/bau069.long)
+Vincent J. Henry; Anita E. Bandrowski; Anne-Sophie Pepin; Bruno J. Gonzalez; Arnaud Desfeux
+Database 2014; doi: 10.1093/database/bau069

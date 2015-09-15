@@ -28,6 +28,7 @@ shinyUI(fluidPage(
                  icon = icon('info-sign',lib='glyphicon'),
                  #button.width = "100%",
                  "test info"),
+                 includeMarkdown('about.Rmd')),
   fluidRow(
     column(6,
            collapsibleDiv(
