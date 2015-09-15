@@ -7,7 +7,7 @@ load('address_lat_lng.RData')
 load('address_pubmed.RData')
 
 build_a<-function(x){
-  ifelse(is.na(x), NA, sprintf('<a href="%s">%s</a>', x, x))
+  ifelse(is.na(x), NA, sprintf('<a href="%s" target="_blank">%s</a>', x, x))
 }
 
 
@@ -39,7 +39,7 @@ name_links<-rbind.fill(catalog_folder_df,
         catalog_software_df[c('href', 'name')])  %>%
   unique %>%
   mutate(id = gsub('^.*-', '', gsub('-p1.html|.html', '', href)),
-         name = sprintf('<a href="http://omictools.com/%s">%s</a>', href, name) ) %>%
+         name = sprintf('<a href="http://omictools.com/%s" target="_blank">%s</a>', href, name) ) %>%
   select(-href)
 
 name_links<-name_links[!duplicated(name_links$id),]
