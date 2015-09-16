@@ -137,6 +137,9 @@ shinyServer(function(input, output, session) {
                     title = title,
                     opacity = 1)
         
+      }else{
+        proxy<-proxy %>%
+          clearControls()
       }
         
     }
