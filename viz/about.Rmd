@@ -11,7 +11,7 @@ function share(){window.open('http://v.t.sina.com.cn/share/share.php?title=' + d
 </script>
 
 <div style="text-align:right">
-<a href="https://twitter.com/share" class="twitter-share-button" data-via="gahoo_lee">Tweet</a>
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="gahoo_lee" target="_blank">Tweet</a>
 <a href="#" onclick="share()" ><img src="http://weibo.com/favicon.ico" />Share</a>
 </div>
 
