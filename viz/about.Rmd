@@ -17,7 +17,7 @@ function share(){window.open('http://v.t.sina.com.cn/share/share.php?title=' + d
 
 Thanks to the brilliant work of [omictools.com](http://omictools.com), we got a constantly updating directory which contains huge amout of latest tools/papers/databases helping us get our omic analysis done. Data for visualization was collected at 2015-08-23, newer data was not included.
 
-Thanks to [timelyportfolio](https://twitter.com/timelyportfolio), I was able to visualize the directory using [`d3treeR`](http://www.buildingwidgets.com/blog/2015/7/22/week-29-d3treer-v2). One tiny flaw is that, I don't know how to return **id** instead of **name**, which makes it difficult to distinguish catalogs with same name.
+Thanks to @[timelyportfolio](https://twitter.com/timelyportfolio), I was able to visualize the directory using [`d3treeR`](http://www.buildingwidgets.com/blog/2015/7/22/week-29-d3treer-v2). One tiny flaw is that, I don't know how to return **id** instead of **name**, which makes it difficult to distinguish catalogs with same name.
 
 `RISmed` was employed to retrieve PubMed information, including citation counts and addresses. After scrubbing addresses, `ggmap` was employed to geocode. It's time consuming, and 1791 addresses failed. I decided to leave it there, because data scrubbing is a real pain. So, those fail to geocode will not show in the map. [`Leaflet`](https://rstudio.github.io/leaflet/) was employ to build the interactvie map. The compelte codes for data processing procedure could be found on [GitHub](https://github.com/gahoo/omictools_viz/).
 
